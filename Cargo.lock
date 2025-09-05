@@ -30,6 +30,7 @@ dependencies = [
  "config",
  "dotenv",
  "reqwest",
+ "secrecy",
  "serde",
  "serde_json",
  "tokio",
@@ -1135,6 +1136,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f29ebaa345f945cec9fbbc532eb307f0fdad8161f281b6369539c8d84876b3d"
 dependencies = [
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "secrecy"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e891af845473308773346dc847b2c23ee78fe442e0472ac50e22a18a93d3ae5a"
+dependencies = [
+ "serde",
+ "zeroize",
 ]
 
 [[package]]

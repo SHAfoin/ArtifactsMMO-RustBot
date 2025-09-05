@@ -1,12 +1,13 @@
 use config::Config;
 use dotenv::dotenv;
 use reqwest::{header::HeaderValue, Error};
+use secrecy::{ExposeSecret, SecretBox};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct Settings {
     api_url: String,
-    api_token: String,
+    api_token: SecretBox<String>,
 }
 
 async fn post_request() -> Result<(), Error> {

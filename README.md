@@ -1,6 +1,5 @@
-//TODO : Faire une fonction pour les appels d'api "all" et une autre pour les appels avec "id"
-//TODO : Finir d'ajouter les paramètres query
-//TODO : Ajouter les contraintes de query & de code (regex, valeur minimale, maximale...)
+# Artefacts MMO
+
 //TODO : Voir le code de retour des fonctions, est ce qu'il reçoit le 200 ou 404 ? Est ce qu'il faut faire mon propre code de retour ?
 
 - Requêtes HTTP : reqwest / tokio

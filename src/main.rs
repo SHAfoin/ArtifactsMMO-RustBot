@@ -1,10 +1,146 @@
-use std::path;
-
 use config::Config;
+use core::fmt;
 use dotenv::dotenv;
+use regex::Regex;
 use reqwest::{header::HeaderValue, Error};
 use secrecy::{ExposeSecret, SecretBox};
 use serde::Deserialize;
+
+#[derive(Debug, Clone)]
+pub struct ValidatedString(String);
+
+impl ValidatedString {
+    pub fn new(value: &str) -> Result<Self, String> {
+        let regex = Regex::new(r"^[a-zA-Z0-9_-]+$").unwrap();
+        if regex.is_match(value) {
+            Ok(Self(value.to_string()))
+        } else {
+            Err(format!(
+                "Invalid string: '{}'. Must match ^[a-zA-Z0-9_-]+$",
+                value
+            ))
+        }
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for ValidatedString {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<&str> for ValidatedString {
+    fn from(item: &str) -> Self {
+        ValidatedString::new(&item).unwrap_or_default()
+    }
+}
+
+impl Default for ValidatedString {
+    fn default() -> Self {
+        Self("".to_string())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ValidatedStringWithSpaces(String);
+
+impl ValidatedStringWithSpaces {
+    pub fn new(value: &str) -> Result<Self, String> {
+        let regex = Regex::new(r"^[a-zA-Z0-9_-]+(\s[a-zA-Z0-9_-]+)*\s?$").unwrap();
+        if regex.is_match(value) {
+            Ok(Self(value.to_string()))
+        } else {
+            Err(format!(
+                "Invalid string: '{}'. Must match ^[a-zA-Z0-9_-]+(\\s[a-zA-Z0-9_-]+)*\\s?$",
+                value
+            ))
+        }
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for ValidatedStringWithSpaces {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<&str> for ValidatedStringWithSpaces {
+    fn from(item: &str) -> Self {
+        ValidatedStringWithSpaces::new(&item).unwrap_or_default()
+    }
+}
+
+impl Default for ValidatedStringWithSpaces {
+    fn default() -> Self {
+        Self("".to_string())
+    }
+}
+
+enum Skill {
+    Combat,
+    Woodcutting,
+    Mining,
+    Fishing,
+    Weaponcrafting,
+    Gearcrafting,
+    Jewelrycrafting,
+    Cooking,
+    Alchemy,
+}
+
+impl Skill {
+    fn is_resource_skill(&self) -> bool {
+        matches!(
+            self,
+            Skill::Woodcutting | Skill::Mining | Skill::Fishing | Skill::Alchemy
+        )
+    }
+
+    fn is_task_skill(&self) -> bool {
+        matches!(
+            self,
+            Skill::Weaponcrafting
+                | Skill::Gearcrafting
+                | Skill::Jewelrycrafting
+                | Skill::Cooking
+                | Skill::Woodcutting
+                | Skill::Mining
+                | Skill::Alchemy
+                | Skill::Fishing
+        )
+    }
+
+    fn is_crafting_skill(&self) -> bool {
+        matches!(
+            self,
+            Skill::Weaponcrafting | Skill::Gearcrafting | Skill::Jewelrycrafting | Skill::Cooking
+        )
+    }
+}
+
+impl ToString for Skill {
+    fn to_string(&self) -> String {
+        match self {
+            Skill::Combat => "combat".to_string(),
+            Skill::Woodcutting => "woodcutting".to_string(),
+            Skill::Mining => "mining".to_string(),
+            Skill::Fishing => "fishing".to_string(),
+            Skill::Weaponcrafting => "weaponcrafting".to_string(),
+            Skill::Gearcrafting => "gearcrafting".to_string(),
+            Skill::Jewelrycrafting => "jewelrycrafting".to_string(),
+            Skill::Cooking => "cooking".to_string(),
+            Skill::Alchemy => "alchemy".to_string(),
+        }
+    }
+}
 
 enum TaskType {
     Monsters,
@@ -16,24 +152,6 @@ impl ToString for TaskType {
         match self {
             TaskType::Monsters => "monsters".to_string(),
             TaskType::Items => "items".to_string(),
-        }
-    }
-}
-
-enum ResourceSkill {
-    Woodcutting,
-    Mining,
-    Fishing,
-    Alchemy,
-}
-
-impl ToString for ResourceSkill {
-    fn to_string(&self) -> String {
-        match self {
-            ResourceSkill::Woodcutting => "woodcutting".to_string(),
-            ResourceSkill::Mining => "mining".to_string(),
-            ResourceSkill::Fishing => "fishing".to_string(),
-            ResourceSkill::Alchemy => "alchemy".to_string(),
         }
     }
 }
@@ -104,56 +222,6 @@ impl ToString for AchievementType {
     }
 }
 
-enum TaskSkillType {
-    Weaponcrafting,
-    Gearcrafting,
-    Jewelrycrafting,
-    Cooking,
-    Woodcutting,
-    Mining,
-    Alchemy,
-    Fishing,
-}
-
-impl ToString for TaskSkillType {
-    fn to_string(&self) -> String {
-        match self {
-            TaskSkillType::Weaponcrafting => "weaponcrafting".to_string(),
-            TaskSkillType::Gearcrafting => "gearcrafting".to_string(),
-            TaskSkillType::Jewelrycrafting => "jewelrycrafting".to_string(),
-            TaskSkillType::Cooking => "cooking".to_string(),
-            TaskSkillType::Woodcutting => "woodcutting".to_string(),
-            TaskSkillType::Mining => "mining".to_string(),
-            TaskSkillType::Alchemy => "alchemy".to_string(),
-            TaskSkillType::Fishing => "fishing".to_string(),
-        }
-    }
-}
-
-enum CraftSkillType {
-    Weaponcrafting,
-    Gearcrafting,
-    Jewelrycrafting,
-    Cooking,
-    Woodcutting,
-    Mining,
-    Alchemy,
-}
-
-impl ToString for CraftSkillType {
-    fn to_string(&self) -> String {
-        match self {
-            CraftSkillType::Weaponcrafting => "weaponcrafting".to_string(),
-            CraftSkillType::Gearcrafting => "gearcrafting".to_string(),
-            CraftSkillType::Jewelrycrafting => "jewelrycrafting".to_string(),
-            CraftSkillType::Cooking => "cooking".to_string(),
-            CraftSkillType::Woodcutting => "woodcutting".to_string(),
-            CraftSkillType::Mining => "mining".to_string(),
-            CraftSkillType::Alchemy => "alchemy".to_string(),
-        }
-    }
-}
-
 enum ScoreType {
     AchievementsPoints,
     Gold,
@@ -164,34 +232,6 @@ impl ToString for ScoreType {
         match self {
             ScoreType::AchievementsPoints => "achievements_points".to_string(),
             ScoreType::Gold => "gold".to_string(),
-        }
-    }
-}
-
-enum XPType {
-    Combat,
-    Woodcutting,
-    Mining,
-    Fishing,
-    Weaponcrafting,
-    Gearcrafting,
-    Jewelrycrafting,
-    Cooking,
-    Alchemy,
-}
-
-impl ToString for XPType {
-    fn to_string(&self) -> String {
-        match self {
-            XPType::Combat => "combat".to_string(),
-            XPType::Woodcutting => "woodcutting".to_string(),
-            XPType::Mining => "mining".to_string(),
-            XPType::Fishing => "fishing".to_string(),
-            XPType::Weaponcrafting => "weaponcrafting".to_string(),
-            XPType::Gearcrafting => "gearcrafting".to_string(),
-            XPType::Jewelrycrafting => "jewelrycrafting".to_string(),
-            XPType::Cooking => "cooking".to_string(),
-            XPType::Alchemy => "alchemy".to_string(),
         }
     }
 }
@@ -270,12 +310,12 @@ struct Settings {
 
 #[derive(Debug, Clone)]
 struct PaginationParams {
-    page: u32,
-    size: u32,
+    page: isize,
+    size: isize,
 }
 
 impl PaginationParams {
-    fn new(page: u32, size: u32) -> Result<Self, String> {
+    fn new(page: isize, size: isize) -> Result<Self, String> {
         if page < 1 {
             return Err("Page must be >= 1".to_string());
         }
@@ -384,7 +424,7 @@ async fn get_account_details(settings: Settings) -> Result<(), Error> {
 }
 
 /// Retrieve the details of a character.
-async fn get_character(settings: Settings, name: &str) -> Result<(), Error> {
+async fn get_character(settings: Settings, name: ValidatedString) -> Result<(), Error> {
     get(settings, &format!("/characters/{}", name), None).await
     // match name {
     //     Some(n) =>
@@ -400,7 +440,7 @@ async fn get_bank_details(settings: Settings) -> Result<(), Error> {
 /// Fetch all items in your bank.
 async fn get_bank_items(
     settings: Settings,
-    item_code: Option<&str>,
+    item_code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
     let mut query_params = Vec::new();
@@ -419,7 +459,7 @@ async fn get_bank_items(
 /// Fetch your sell orders details.
 async fn get_my_grandexchange_sell_orders(
     settings: Settings,
-    code: Option<&str>,
+    code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
     let mut query_params = Vec::new();
@@ -438,8 +478,8 @@ async fn get_my_grandexchange_sell_orders(
 /// Fetch your sales history of the last 7 days.
 async fn get_my_grandexchange_sell_history(
     settings: Settings,
-    code: Option<&str>,
-    id: Option<&str>,
+    code: Option<ValidatedString>,
+    id: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
     let mut query_params = Vec::new();
@@ -462,8 +502,8 @@ async fn get_my_grandexchange_sell_history(
 /// Fetch all sell orders.
 async fn get_all_grandexchange_orders(
     settings: Settings,
-    seller: Option<&str>,
-    code: Option<&str>,
+    seller: Option<ValidatedString>,
+    code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
     let mut query_params = Vec::new();
@@ -484,16 +524,16 @@ async fn get_all_grandexchange_orders(
 }
 
 /// Retrieve the sell order of a item.
-async fn get_grandexchange_order(settings: Settings, id: &str) -> Result<(), Error> {
+async fn get_grandexchange_order(settings: Settings, id: ValidatedString) -> Result<(), Error> {
     get(settings, &format!("/grandexchange/orders/{}", id), None).await
 }
 
 // For a specific item only, print the last 7 days of sell history
 async fn get_grandexchange_sell_history(
     settings: Settings,
-    code: &str,
-    buyer: Option<&str>,
-    seller: Option<&str>,
+    code: ValidatedString,
+    buyer: Option<ValidatedString>,
+    seller: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
     let mut query_params = Vec::new();
@@ -518,7 +558,10 @@ async fn get_grandexchange_sell_history(
     .await
 }
 
-async fn get_characters_logs(settings: Settings, character: Option<&str>) -> Result<(), Error> {
+async fn get_characters_logs(
+    settings: Settings,
+    character: Option<ValidatedString>,
+) -> Result<(), Error> {
     get(
         settings,
         &format!("/my/logs/{}", character.unwrap_or_default()),
@@ -530,7 +573,7 @@ async fn get_characters_logs(settings: Settings, character: Option<&str>) -> Res
 /// Retrieve the achievements of a account.
 async fn get_account_achievements(
     settings: Settings,
-    account: &str,
+    account: ValidatedString,
     completed: Option<bool>,
     _type: Option<AchievementType>,
     pagination: Option<PaginationParams>,
@@ -558,12 +601,12 @@ async fn get_account_achievements(
 }
 
 /// Fetch account character lists.
-async fn get_account_characters(settings: Settings, account: &str) -> Result<(), Error> {
+async fn get_account_characters(settings: Settings, account: ValidatedString) -> Result<(), Error> {
     get(settings, &format!("/accounts/{}/characters", account), None).await
 }
 
 /// Retrieve the details of a character.
-async fn get_account(settings: Settings, account: &str) -> Result<(), Error> {
+async fn get_account(settings: Settings, account: ValidatedString) -> Result<(), Error> {
     get(settings, &format!("/accounts/{}", account), None).await
 }
 
@@ -587,7 +630,7 @@ async fn get_all_achievements(
 }
 
 /// Retrieve the details of a achievement.
-async fn get_achievement(settings: Settings, code: &str) -> Result<(), Error> {
+async fn get_achievement(settings: Settings, code: ValidatedString) -> Result<(), Error> {
     get(settings, &format!("/achievements/{}", code), None).await
 }
 
@@ -658,15 +701,27 @@ async fn get_all_active_events(
 /// Fetch items details.
 async fn get_all_items(
     settings: Settings,
-    craft_material: Option<&str>,
-    craft_skill: Option<CraftSkillType>,
-    max_level: Option<u32>,
-    min_level: Option<u32>,
-    name: Option<&str>,
+    craft_material: Option<ValidatedString>,
+    craft_skill: Option<Skill>,
+    max_level: Option<isize>,
+    min_level: Option<isize>,
+    name: Option<ValidatedStringWithSpaces>,
     _type: Option<ItemType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
     let mut query_params = Vec::new();
+
+    if let Some(craft_skill) = &craft_skill {
+        if !craft_skill.is_crafting_skill() {
+            panic!("craft_skill must be a crafting skill");
+        }
+    }
+
+    if let (Some(min), Some(max)) = (min_level, max_level) {
+        if min > max {
+            panic!("min_level cannot be greater than max_level");
+        }
+    }
 
     if let Some(craft_material) = craft_material {
         query_params.push(("craft_material", craft_material.to_string()));
@@ -707,8 +762,8 @@ async fn get_item(settings: Settings, code: &str) -> Result<(), Error> {
 /// Fetch leaderboard details.
 async fn get_characters_leaderboard(
     settings: Settings,
-    name: Option<&str>,
-    sort: Option<XPType>,
+    name: Option<ValidatedStringWithSpaces>,
+    sort: Option<Skill>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
     let mut query_params = Vec::new();
@@ -731,7 +786,7 @@ async fn get_characters_leaderboard(
 /// Fetch leaderboard details.
 async fn get_account_leaderboard(
     settings: Settings,
-    name: Option<&str>,
+    name: Option<ValidatedStringWithSpaces>,
     sort: Option<ScoreType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
@@ -755,7 +810,7 @@ async fn get_account_leaderboard(
 /// Fetch maps details.
 async fn get_all_maps(
     settings: Settings,
-    content_code: Option<&str>,
+    content_code: Option<ValidatedString>,
     content_type: Option<MapContentType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
@@ -784,13 +839,19 @@ async fn get_map(settings: Settings, x: &str, y: &str) -> Result<(), Error> {
 /// Fetch maps details.
 async fn get_all_monsters(
     settings: Settings,
-    drop: Option<&str>,
-    max_level: Option<u32>,
-    min_level: Option<u32>,
-    name: Option<&str>,
+    drop: Option<ValidatedString>,
+    max_level: Option<isize>,
+    min_level: Option<isize>,
+    name: Option<ValidatedStringWithSpaces>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
     let mut query_params = Vec::new();
+
+    if let (Some(min), Some(max)) = (min_level, max_level) {
+        if min > max {
+            panic!("min_level cannot be greater than max_level");
+        }
+    }
 
     if let Some(drop) = drop {
         query_params.push(("drop", drop.to_string()));
@@ -823,7 +884,7 @@ async fn get_monster(settings: Settings, code: &str) -> Result<(), Error> {
 /// Fetch NPCs details.
 async fn get_all_npcs(
     settings: Settings,
-    name: Option<&str>,
+    name: Option<ValidatedStringWithSpaces>,
     _type: Option<NPCType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
@@ -845,7 +906,7 @@ async fn get_all_npcs(
 }
 
 /// Retrieve the details of a NPC.
-async fn get_npc(settings: Settings, code: Option<&str>) -> Result<(), Error> {
+async fn get_npc(settings: Settings, code: Option<ValidatedString>) -> Result<(), Error> {
     get(
         settings,
         &format!("/npcs/details/{}", code.unwrap_or_default()),
@@ -875,9 +936,9 @@ async fn get_npc_items(
 /// Retrieve the list of all NPC items.
 async fn get_all_npcs_items(
     settings: Settings,
-    code: Option<&str>,
-    currency: Option<&str>,
-    npc: Option<&str>,
+    code: Option<ValidatedString>,
+    currency: Option<ValidatedString>,
+    npc: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
     let mut query_params = Vec::new();
@@ -900,14 +961,26 @@ async fn get_all_npcs_items(
 /// Fetch resources details.
 async fn get_all_resources(
     settings: Settings,
-    drop: Option<&str>,
-    max_level: Option<u32>,
-    min_level: Option<u32>,
-    skill: Option<ResourceSkill>,
-    name: Option<&str>,
+    drop: Option<ValidatedString>,
+    max_level: Option<isize>,
+    min_level: Option<isize>,
+    skill: Option<Skill>,
+    name: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
     let mut query_params = Vec::new();
+
+    if let Some(skill) = &skill {
+        if !skill.is_resource_skill() {
+            panic!("skill must be a resource skill");
+        }
+    }
+
+    if let (Some(min), Some(max)) = (min_level, max_level) {
+        if min > max {
+            panic!("min_level cannot be greater than max_level");
+        }
+    }
 
     if let Some(drop) = drop {
         query_params.push(("drop", drop.to_string()));
@@ -949,13 +1022,25 @@ async fn get_task(settings: Settings, code: &str) -> Result<(), Error> {
 /// Fetch the list of all tasks.
 async fn get_all_tasks(
     settings: Settings,
-    max_level: Option<u32>,
-    min_level: Option<u32>,
-    skill: Option<TaskSkillType>,
+    max_level: Option<isize>,
+    min_level: Option<isize>,
+    skill: Option<Skill>,
     _type: Option<TaskType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
     let mut query_params = Vec::new();
+
+    if let Some(skill) = &skill {
+        if !skill.is_task_skill() {
+            panic!("skill must be a task skill");
+        }
+    }
+
+    if let (Some(min), Some(max)) = (min_level, max_level) {
+        if min > max {
+            panic!("min_level cannot be greater than max_level");
+        }
+    }
 
     if let Some(max_level) = max_level {
         query_params.push(("max_level", max_level.to_string()));
@@ -1002,7 +1087,19 @@ async fn get_all_tasks_rewards(
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let settings: Settings = app_configuration();
-    get_account_characters(settings, "shafoin").await?;
+    // get_account_characters(settings, "shafoin".into()).await?;
+
+    get_all_items(
+        settings,
+        None,
+        None,
+        Some(10),
+        Some(1),
+        Some("iron".into()),
+        None,
+        None,
+    )
+    .await?;
 
     // post_request().await?;
     Ok(())

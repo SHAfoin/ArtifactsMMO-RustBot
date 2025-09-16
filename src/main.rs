@@ -5,6 +5,75 @@ use regex::Regex;
 use reqwest::{header::HeaderValue, Error};
 use secrecy::{ExposeSecret, SecretBox};
 use serde::Deserialize;
+use std::path::Display;
+
+/// men1 men2 men3 women1 women2 women3 corrupted1 zombie1
+enum SkinType {
+    Male1,
+    Male2,
+    Male3,
+    Women1,
+    Women2,
+    Women3,
+    Corrupted1,
+    Zombie1,
+}
+
+impl fmt::Display for SkinType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let skin_str = match self {
+            SkinType::Male1 => "men1",
+            SkinType::Male2 => "men2",
+            SkinType::Male3 => "men3",
+            SkinType::Women1 => "women1",
+            SkinType::Women2 => "women2",
+            SkinType::Women3 => "women3",
+            SkinType::Corrupted1 => "corrupted1",
+            SkinType::Zombie1 => "zombie1",
+        };
+        write!(f, "{}", skin_str)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum EquipmentSlot {
+    Head,
+    Body,
+    Legs,
+    Feet,
+    Ring1,
+    Ring2,
+    Amulet,
+    Artifact1,
+    Artifact2,
+    Artifact3,
+    Utility1,
+    Utility2,
+    Bag,
+    Rune,
+}
+
+impl fmt::Display for EquipmentSlot {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let slot_str = match self {
+            EquipmentSlot::Head => "head",
+            EquipmentSlot::Body => "body",
+            EquipmentSlot::Legs => "legs",
+            EquipmentSlot::Feet => "feet",
+            EquipmentSlot::Ring1 => "ring1",
+            EquipmentSlot::Ring2 => "ring2",
+            EquipmentSlot::Amulet => "amulet",
+            EquipmentSlot::Artifact1 => "artifact1",
+            EquipmentSlot::Artifact2 => "artifact2",
+            EquipmentSlot::Artifact3 => "artifact3",
+            EquipmentSlot::Utility1 => "utility1",
+            EquipmentSlot::Utility2 => "utility2",
+            EquipmentSlot::Bag => "bag",
+            EquipmentSlot::Rune => "rune",
+        };
+        write!(f, "{}", slot_str)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct ValidatedString(String);
@@ -1084,22 +1153,456 @@ async fn get_all_tasks_rewards(
     get(settings, "/tasks/rewards", Some(query_params)).await
 }
 
+/// Moves a character on the map using the map's X and Y position.
+async fn action_move(
+    settings: Settings,
+    name: ValidatedString,
+    x: isize,
+    y: isize,
+) -> Result<(), Error> {
+    let json = format!(r#"{{"x": {}, "y": {}}}"#, x, y);
+    post(settings, &format!("/my/{}/action/move", name), &json).await
+}
+
+/// Recovers hit points by resting. (1 second per 5 HP, minimum 3 seconds)
+async fn action_rest(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    post(settings, &format!("/my/{}/action/rest", name), "").await
+}
+
+/// Equip an item on your character.
+async fn action_equip_item(
+    settings: Settings,
+    name: ValidatedString,
+    code: ValidatedString,
+    slot: EquipmentSlot,
+    quantity: Option<isize>,
+) -> Result<(), Error> {
+    if (slot == EquipmentSlot::Utility1 || slot == EquipmentSlot::Utility2) {
+        if let Some(q) = quantity {
+            if q < 1 || q > 100 {
+                panic!(
+                    "Quantity must be between 1 and 100 when equipping an item in a utility slot"
+                );
+            }
+        }
+    }
+
+    let json = format!(
+        r#"{{"code": "{}", "slot": "{}", "quantity": {}}}"#,
+        code,
+        slot,
+        quantity.unwrap_or(1)
+    );
+    post(settings, &format!("/my/{}/action/equip", name), &json).await
+}
+
+/// Unequip an item on your character.
+async fn action_unequip_item(
+    settings: Settings,
+    name: ValidatedString,
+    slot: EquipmentSlot,
+    quantity: Option<isize>,
+) -> Result<(), Error> {
+    if (slot == EquipmentSlot::Utility1 || slot == EquipmentSlot::Utility2) {
+        if let Some(q) = quantity {
+            if q < 1 || q > 100 {
+                panic!(
+                    "Quantity must be between 1 and 100 when unequipping an item in a utility slot"
+                );
+            }
+        }
+    }
+
+    let json = format!(
+        r#"{{"slot": "{}", "quantity": {}}}"#,
+        slot,
+        quantity.unwrap_or(1)
+    );
+    post(settings, &format!("/my/{}/action/unequip", name), &json).await
+}
+
+/// Use an item as a consumable.
+async fn action_use_item(
+    settings: Settings,
+    name: ValidatedString,
+    code: ValidatedString,
+    quantity: isize,
+) -> Result<(), Error> {
+    if quantity < 1 {
+        panic!("Quantity must be at least 1 when using an item");
+    }
+
+    let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
+    post(settings, &format!("/my/{}/action/use", name), &json).await
+}
+
+/// Start a fight against a monster on the character's map.
+async fn action_fight(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    post(settings, &format!("/my/{}/action/fight", name), "").await
+}
+
+/// Harvest a resource on the character's map.
+async fn action_gathering(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    post(settings, &format!("/my/{}/action/gathering", name), "").await
+}
+
+/// Crafting an item. The character must be on a map with a workshop.
+async fn action_crafting(
+    settings: Settings,
+    name: ValidatedString,
+    code: ValidatedString,
+    quantity: Option<isize>,
+) -> Result<(), Error> {
+    if let Some(q) = quantity {
+        if q < 1 {
+            panic!("Quantity must be at least 1 when crafting an item");
+        }
+    }
+
+    let json = format!(
+        r#"{{"code": "{}", "quantity": {}}}"#,
+        code,
+        quantity.unwrap_or(1)
+    );
+    post(settings, &format!("/my/{}/action/crafting", name), &json).await
+}
+
+/// Deposit gold in a bank on the character's map.
+async fn action_deposit_bank_gold(
+    settings: Settings,
+    name: ValidatedString,
+    quantity: isize,
+) -> Result<(), Error> {
+    if quantity < 1 {
+        panic!("Quantity must be at least 1 when depositing gold");
+    }
+
+    let json = format!(r#"{{"quantity": {}}}"#, quantity);
+    post(
+        settings,
+        &format!("/my/{}/action/bank/deposit/gold", name),
+        &json,
+    )
+    .await
+}
+
+/// Deposit multiple items in a bank on the character's map. The cooldown will be 3 seconds multiplied by the number of different items withdrawn.
+async fn action_deposit_bank_item(
+    settings: Settings,
+    name: ValidatedString,
+    items: Vec<(ValidatedString, isize)>,
+) -> Result<(), Error> {
+    for (code, quantity) in &items {
+        if *quantity < 1 {
+            panic!("Quantity must be at least 1 when depositing an item");
+        }
+    }
+
+    let items_json: Vec<String> = items
+        .into_iter()
+        .map(|(code, quantity)| format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity))
+        .collect();
+
+    let json_string = format!("[{}]", items_json.join(","));
+
+    post(
+        settings,
+        &format!("/my/{}/action/bank/deposit/item", name),
+        &json_string,
+    )
+    .await
+}
+
+/// Take items from your bank and put them in the character's inventory. The cooldown will be 3 seconds multiplied by the number of different items withdrawn.
+async fn action_withdraw_bank_item(
+    settings: Settings,
+    name: ValidatedString,
+    items: Vec<(ValidatedString, isize)>,
+) -> Result<(), Error> {
+    for (code, quantity) in &items {
+        if *quantity < 1 {
+            panic!("Quantity must be at least 1 when withdrawing an item");
+        }
+    }
+
+    let items_json: Vec<String> = items
+        .into_iter()
+        .map(|(code, quantity)| format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity))
+        .collect();
+
+    let json_string = format!("[{}]", items_json.join(","));
+
+    post(
+        settings,
+        &format!("/my/{}/action/bank/withdraw/item", name),
+        &json_string,
+    )
+    .await
+}
+
+/// Withdraw gold from your bank.
+async fn action_withdraw_bank_gold(
+    settings: Settings,
+    name: ValidatedString,
+    quantity: isize,
+) -> Result<(), Error> {
+    if quantity < 1 {
+        panic!("Quantity must be at least 1 when withdrawing gold");
+    }
+
+    let json = format!(r#"{{"quantity": {}}}"#, quantity);
+    post(
+        settings,
+        &format!("/my/{}/action/bank/withdraw/gold", name),
+        &json,
+    )
+    .await
+}
+
+/// Buy a 25 slots bank expansion.
+async fn action_buy_bank_expansion(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    post(
+        settings,
+        &format!("/my/{}/action/bank/buy_expansion", name),
+        "",
+    )
+    .await
+}
+
+/// Buy an item from an NPC on the character's map.
+async fn action_npc_buy_item(
+    settings: Settings,
+    name: ValidatedString,
+    code: ValidatedString,
+    quantity: isize,
+) -> Result<(), Error> {
+    if quantity < 1 || quantity > 100 {
+        panic!("Quantity must be between 1 and 100 when buying an item");
+    }
+
+    let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
+    post(settings, &format!("/my/{}/action/npc/buy", name), &json).await
+}
+
+/// Sell an item to an NPC on the character's map.
+async fn action_npc_sell_item(
+    settings: Settings,
+    name: ValidatedString,
+    code: ValidatedString,
+    quantity: isize,
+) -> Result<(), Error> {
+    if quantity < 1 || quantity > 100 {
+        panic!("Quantity must be between 1 and 100 when selling an item");
+    }
+
+    let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
+    post(settings, &format!("/my/{}/action/npc/sell", name), &json).await
+}
+
+/// Recycling an item. The character must be on a map with a workshop (only for equipments and weapons).
+async fn action_recycling(
+    settings: Settings,
+    name: ValidatedString,
+    code: ValidatedString,
+    quantity: Option<isize>,
+) -> Result<(), Error> {
+    if let Some(q) = quantity {
+        if q < 1 {
+            panic!("Quantity must be at least 1 when recycling an item");
+        }
+    }
+
+    let json = format!(
+        r#"{{"code": "{}", "quantity": {}}}"#,
+        code,
+        quantity.unwrap_or(1)
+    );
+    post(settings, &format!("/my/{}/action/recycling", name), &json).await
+}
+
+/// Buy an item at the Grand Exchange on the character's map.
+async fn action_grandexchange_buy_item(
+    settings: Settings,
+    name: ValidatedString,
+    id: String,
+    quantity: isize,
+) -> Result<(), Error> {
+    if quantity < 1 || quantity > 100 {
+        panic!("Quantity must be between 1 and 100 when buying an item");
+    }
+
+    let json = format!(r#"{{"id": "{}", "quantity": {}}}"#, id, quantity);
+    post(
+        settings,
+        &format!("/my/{}/action/grandexchange/buy", name),
+        &json,
+    )
+    .await
+}
+
+/// Create a sell order at the Grand Exchange on the character's map. Please note there is a 3% listing tax, charged at the time of posting, on the total price.
+async fn action_grandexchange_create_sell_order(
+    settings: Settings,
+    name: ValidatedString,
+    code: ValidatedString,
+    quantity: isize,
+    price: isize,
+) -> Result<(), Error> {
+    if quantity < 1 || quantity > 100 {
+        panic!("Quantity must be between 1 and 100 when creating a sell order");
+    }
+
+    if price < 1 || price > 1_000_000_000 {
+        panic!("Price must be at least 1 and at most 1,000,000,000 when creating a sell order");
+    }
+
+    let json = format!(
+        r#"{{"code": "{}", "price": {}, "quantity": {}}}"#,
+        code, price, quantity
+    );
+
+    post(
+        settings,
+        &format!("/my/{}/action/grandexchange/sell", name),
+        &json,
+    )
+    .await
+}
+
+/// Cancel a sell order at the Grand Exchange on the character's map.
+async fn action_grandexchange_cancel_sell_order(
+    settings: Settings,
+    name: ValidatedString,
+    id: String,
+) -> Result<(), Error> {
+    let json = format!(r#"{{"id": "{}"}}"#, id);
+
+    post(
+        settings,
+        &format!("/my/{}/action/grandexchange/cancel", name),
+        &json,
+    )
+    .await
+}
+
+/// Complete a task.
+async fn action_complete_task(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    post(settings, &format!("/my/{}/action/task/complete", name), "").await
+}
+
+/// Exchange 6 tasks coins for a random reward. Rewards are exclusive items or resources.
+async fn action_task_exchange(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    post(settings, &format!("/my/{}/action/task/exchange", name), "").await
+}
+
+/// Accepting a new task.
+async fn action_accept_new_task(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    post(settings, &format!("/my/{}/action/task/new", name), "").await
+}
+
+/// Trading items with a Tasks Master.
+async fn action_task_trade(
+    settings: Settings,
+    name: ValidatedString,
+    code: ValidatedString,
+    quantity: isize,
+) -> Result<(), Error> {
+    if quantity < 1 {
+        panic!("Quantity must be at least 1 when trading an item");
+    }
+
+    let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
+    post(settings, &format!("/my/{}/action/task/trade", name), &json).await
+}
+
+/// Cancel a task for 1 tasks coin.
+async fn action_cancel_task(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    post(settings, &format!("/my/{}/action/task/cancel", name), "").await
+}
+
+/// Give gold to another character in your account on the same map.
+async fn action_give_gold(
+    settings: Settings,
+    name: ValidatedString,
+    quantity: isize,
+    character: ValidatedString,
+) -> Result<(), Error> {
+    if quantity < 1 {
+        panic!("Quantity must be at least 1 when giving gold");
+    }
+
+    let json = format!(
+        r#"{{"quantity": {}, "character": "{}"}}"#,
+        quantity, character
+    );
+    post(settings, &format!("/my/{}/action/give/gold", name), &json).await
+}
+
+/// Give items to another character in your account on the same map. The cooldown will be 3 seconds multiplied by the number of different items given.
+async fn action_give_item(
+    settings: Settings,
+    name: ValidatedString,
+    items: Vec<(ValidatedString, isize)>,
+    character: ValidatedString,
+) -> Result<(), Error> {
+    if items.len() < 1 || items.len() > 20 {
+        panic!("You must give between 1 and 20 different items");
+    }
+
+    for (code, quantity) in &items {
+        if *quantity < 1 {
+            panic!("Quantity must be at least 1 when giving an item");
+        }
+    }
+
+    let items_json: Vec<String> = items
+        .into_iter()
+        .map(|(code, quantity)| format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity))
+        .collect();
+
+    let json_string = format!(
+        r#"{{"items": [{}], "character": "{}"}}"#,
+        items_json.join(","),
+        character
+    );
+
+    post(
+        settings,
+        &format!("/my/{}/action/give/item", name),
+        &json_string,
+    )
+    .await
+}
+
+/// Delete an item from your character's inventory.
+async fn action_delete_item(
+    settings: Settings,
+    name: ValidatedString,
+    code: ValidatedString,
+    quantity: isize,
+) -> Result<(), Error> {
+    if quantity < 1 {
+        panic!("Quantity must be at least 1 when deleting an item");
+    }
+
+    let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
+    post(settings, &format!("/my/{}/action/delete", name), &json).await
+}
+
+/// Change the skin of your character.
+async fn action_change_skin(
+    settings: Settings,
+    name: ValidatedString,
+    skin: SkinType,
+) -> Result<(), Error> {
+    let json = format!(r#"{{"skin": "{}"}}"#, skin);
+    post(settings, &format!("/my/{}/action/change_skin", name), &json).await
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let settings: Settings = app_configuration();
     // get_account_characters(settings, "shafoin".into()).await?;
-
-    get_all_items(
-        settings,
-        None,
-        None,
-        Some(10),
-        Some(1),
-        Some("iron".into()),
-        None,
-        None,
-    )
-    .await?;
 
     // post_request().await?;
     Ok(())

@@ -506,10 +506,10 @@ async fn get(
 
     if status.is_success() {
         let response_body = serde_json::to_string_pretty(&response_json).unwrap();
-        info!("{} - {}", status.as_str(), response_body);
+        info!("HTTP {} - {}", status.as_str(), response_body);
     } else {
         error!(
-            "{} - {:?}",
+            "HTTP {} - {:?}",
             status.as_str(),
             response_json["error"]["message"]
                 .as_str()

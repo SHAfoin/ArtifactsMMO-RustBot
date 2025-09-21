@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Context, Result};
 use config::Config;
 use core::fmt;
 use dotenv::dotenv;
@@ -6,8 +7,9 @@ use reqwest::{header::HeaderValue, Error};
 use secrecy::{ExposeSecret, SecretBox};
 use serde::Deserialize;
 use std::path::Display;
+use tracing::{error, info, info_span, warn};
+use tracing_subscriber;
 
-/// men1 men2 men3 women1 women2 women3 corrupted1 zombie1
 enum SkinType {
     Male1,
     Male2,
@@ -371,6 +373,12 @@ impl EventType {
     }
 }
 
+impl fmt::Display for EventType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 #[derive(Deserialize)]
 struct Settings {
     api_url: String,
@@ -394,15 +402,23 @@ impl PaginationParams {
         Ok(Self { page, size })
     }
 
-    fn default() -> Self {
-        Self { page: 1, size: 50 }
-    }
-
     fn to_query_params(&self) -> Vec<(&str, String)> {
         vec![
             ("page", self.page.to_string()),
             ("size", self.size.to_string()),
         ]
+    }
+}
+
+impl fmt::Display for PaginationParams {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "page: {}, size: {}", self.page, self.size)
+    }
+}
+
+impl Default for PaginationParams {
+    fn default() -> Self {
+        Self { page: 1, size: 50 }
     }
 }
 
@@ -438,11 +454,24 @@ async fn post(settings: Settings, path: &str, json: &str) -> Result<(), Error> {
         .send()
         .await?;
 
-    println!("Status Code: {}", response.status());
+    let status = response.status();
+    let response_text = response.text().await?;
+    let response_json: serde_json::Value = serde_json::from_str(&response_text)
+        .unwrap_or_else(|_| serde_json::Value::String(response_text.clone()));
 
-    let response_body = response.text().await?;
-
-    println!("Response body: \n{}", response_body);
+    if status.is_success() {
+        let response_body = serde_json::to_string_pretty(&response_json).unwrap();
+        info!("{} - {}", status.as_str(), response_body);
+    } else {
+        error!(
+            "{} - {:?}",
+            status.as_str(),
+            response_json["error"]["message"]
+                .as_str()
+                .unwrap_or_default()
+        );
+        // return Err(anyhow!("{} - {}", status));
+    }
 
     Ok(())
 }
@@ -470,39 +499,54 @@ async fn get(
         .send()
         .await?;
 
-    println!("Status Code: {}", response.status());
-
+    let status = response.status();
     let response_text = response.text().await?;
     let response_json: serde_json::Value = serde_json::from_str(&response_text)
         .unwrap_or_else(|_| serde_json::Value::String(response_text.clone()));
-    let response_body = serde_json::to_string_pretty(&response_json).unwrap();
 
-    println!("Response body: \n{}", response_body);
+    if status.is_success() {
+        let response_body = serde_json::to_string_pretty(&response_json).unwrap();
+        info!("{} - {}", status.as_str(), response_body);
+    } else {
+        error!(
+            "{} - {:?}",
+            status.as_str(),
+            response_json["error"]["message"]
+                .as_str()
+                .unwrap_or_default()
+        );
+        // return Err(anyhow!("{} - {}", status));
+    }
 
     Ok(())
 }
 
 /// Return the status of the game server.
 async fn get_server_details(settings: Settings) -> Result<(), Error> {
+    let span = info_span!("get_server_details");
+    let _enter = span.enter();
     get(settings, "/", None).await
 }
 
 /// Fetch account details.
 async fn get_account_details(settings: Settings) -> Result<(), Error> {
+    let span = info_span!("get_account_details");
+    let _enter = span.enter();
     get(settings, "/my/details", None).await
 }
 
 /// Retrieve the details of a character.
 async fn get_character(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("get_character", name = %name);
+    let _enter = span.enter();
+
     get(settings, &format!("/characters/{}", name), None).await
-    // match name {
-    //     Some(n) =>
-    //     None => get(settings, "/my/characters", None).await,
-    // }
 }
 
 /// Fetch bank details.
 async fn get_bank_details(settings: Settings) -> Result<(), Error> {
+    let span = info_span!("get_bank_details");
+    let _enter = span.enter();
     get(settings, "/my/bank", None).await
 }
 
@@ -512,6 +556,9 @@ async fn get_bank_items(
     item_code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_bank_items", item_code = %item_code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -531,6 +578,9 @@ async fn get_my_grandexchange_sell_orders(
     code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_my_grandexchange_sell_orders", code = %code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -551,6 +601,9 @@ async fn get_my_grandexchange_sell_history(
     id: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_my_grandexchange_sell_history", code = %code.as_ref().unwrap_or(&ValidatedString::default()), id = %id.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -575,6 +628,9 @@ async fn get_all_grandexchange_orders(
     code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_grandexchange_orders", seller = %seller.as_ref().unwrap_or(&ValidatedString::default()), code = %code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(seller) = seller {
@@ -594,6 +650,9 @@ async fn get_all_grandexchange_orders(
 
 /// Retrieve the sell order of a item.
 async fn get_grandexchange_order(settings: Settings, id: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("get_grandexchange_order", id = %id);
+    let _enter = span.enter();
+
     get(settings, &format!("/grandexchange/orders/{}", id), None).await
 }
 
@@ -605,6 +664,9 @@ async fn get_grandexchange_sell_history(
     seller: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_grandexchange_sell_history", code = %code, buyer = %buyer.as_ref().unwrap_or(&ValidatedString::default()), seller = %seller.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(buyer) = buyer {
@@ -627,16 +689,23 @@ async fn get_grandexchange_sell_history(
     .await
 }
 
-async fn get_characters_logs(
+/// History of the last 250 actions of all your characters.
+async fn get_all_characters_logs(
     settings: Settings,
-    character: Option<ValidatedString>,
+    pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
-    get(
-        settings,
-        &format!("/my/logs/{}", character.unwrap_or_default()),
-        None,
-    )
-    .await
+    let span = info_span!("get_all_characters_logs");
+    let _enter = span.enter();
+
+    get(settings, &format!("/my/logs"), None).await
+}
+
+/// History of the last actions of your character.
+async fn get_character_logs(settings: Settings, character: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("get_characters_logs", character = %character);
+    let _enter = span.enter();
+
+    get(settings, &format!("/my/logs/{}", character), None).await
 }
 
 /// Retrieve the achievements of a account.
@@ -647,6 +716,9 @@ async fn get_account_achievements(
     _type: Option<AchievementType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_account_achievements", account = %account, completed = %completed.unwrap_or(false), _type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -671,11 +743,16 @@ async fn get_account_achievements(
 
 /// Fetch account character lists.
 async fn get_account_characters(settings: Settings, account: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("get_account_characters", account = %account);
+    let _enter = span.enter();
     get(settings, &format!("/accounts/{}/characters", account), None).await
 }
 
 /// Retrieve the details of a character.
 async fn get_account(settings: Settings, account: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("get_account", account = %account);
+    let _enter = span.enter();
+
     get(settings, &format!("/accounts/{}", account), None).await
 }
 
@@ -685,6 +762,9 @@ async fn get_all_achievements(
     _type: Option<AchievementType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_achievements", _type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -700,6 +780,9 @@ async fn get_all_achievements(
 
 /// Retrieve the details of a achievement.
 async fn get_achievement(settings: Settings, code: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("get_achievement", code = %code);
+    let _enter = span.enter();
+
     get(settings, &format!("/achievements/{}", code), None).await
 }
 
@@ -708,6 +791,9 @@ async fn get_all_badges(
     settings: Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_badges", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -719,6 +805,9 @@ async fn get_all_badges(
 
 /// Retrieve the details of a badge.
 async fn get_badge(settings: Settings, code: &str) -> Result<(), Error> {
+    let span = info_span!("get_badge", code = %code);
+    let _enter = span.enter();
+
     get(settings, &format!("/badges/{}", code), None).await
 }
 
@@ -727,6 +816,9 @@ async fn get_all_effects(
     settings: Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_effects", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());
@@ -736,6 +828,9 @@ async fn get_all_effects(
 
 /// Retrieve the details of a badge.
 async fn get_effect(settings: Settings, code: &str) -> Result<(), Error> {
+    let span = info_span!("get_effect", code = %code);
+    let _enter = span.enter();
+
     get(settings, &format!("/effects/{}", code), None).await
 }
 
@@ -745,6 +840,9 @@ async fn get_all_events(
     _type: Option<EventType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_events", _type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());
@@ -760,6 +858,9 @@ async fn get_all_active_events(
     settings: Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_active_events", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());
@@ -778,6 +879,9 @@ async fn get_all_items(
     _type: Option<ItemType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_items", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()), craft_material = %craft_material.as_ref().unwrap_or(&ValidatedString::default()), craft_skill = %craft_skill.as_ref().map_or("".to_string(), |s| s.to_string()), max_level = %max_level.unwrap_or(0), min_level = %min_level.unwrap_or(0), name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), _type = %_type.as_ref().map_or("".to_string(), |t| t.as_str().to_string()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(craft_skill) = &craft_skill {
@@ -825,6 +929,8 @@ async fn get_all_items(
 
 /// Retrieve the details of a item.
 async fn get_item(settings: Settings, code: &str) -> Result<(), Error> {
+    let span = info_span!("get_item", code);
+    let _enter = span.enter();
     get(settings, &format!("/items/{}", code), None).await
 }
 
@@ -835,6 +941,9 @@ async fn get_characters_leaderboard(
     sort: Option<Skill>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_characters_leaderboard", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), sort = %sort.as_ref().map_or("".to_string(), |s| s.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(name) = name {
@@ -859,6 +968,9 @@ async fn get_account_leaderboard(
     sort: Option<ScoreType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_account_leaderboard", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), sort = %sort.as_ref().map_or("".to_string(), |s| s.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(name) = name {
@@ -883,6 +995,9 @@ async fn get_all_maps(
     content_type: Option<MapContentType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_maps", content_code = %content_code.as_ref().unwrap_or(&ValidatedString::default()), content_type = %content_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(content_code) = content_code {
@@ -902,6 +1017,9 @@ async fn get_all_maps(
 
 /// Retrieve the details of a map.
 async fn get_map(settings: Settings, x: &str, y: &str) -> Result<(), Error> {
+    let span = info_span!("get_map", x, y);
+    let _enter = span.enter();
+
     get(settings, &format!("/maps/{}/{}", x, y), None).await
 }
 
@@ -914,6 +1032,9 @@ async fn get_all_monsters(
     name: Option<ValidatedStringWithSpaces>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_monsters", drop = %drop.as_ref().unwrap_or(&ValidatedString::default()), max_level = %max_level.unwrap_or(0), min_level = %min_level.unwrap_or(0), name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let (Some(min), Some(max)) = (min_level, max_level) {
@@ -947,6 +1068,9 @@ async fn get_all_monsters(
 
 /// Retrieve the details of a monster.
 async fn get_monster(settings: Settings, code: &str) -> Result<(), Error> {
+    let span = info_span!("get_monster", code);
+    let _enter = span.enter();
+
     get(settings, &format!("/monsters/{}", code), None).await
 }
 
@@ -957,6 +1081,9 @@ async fn get_all_npcs(
     _type: Option<NPCType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_npcs", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(name) = name {
@@ -976,6 +1103,9 @@ async fn get_all_npcs(
 
 /// Retrieve the details of a NPC.
 async fn get_npc(settings: Settings, code: Option<ValidatedString>) -> Result<(), Error> {
+    let span = info_span!("get_npc", code = %code.as_ref().unwrap_or(&ValidatedString::default()));
+    let _enter = span.enter();
+
     get(
         settings,
         &format!("/npcs/details/{}", code.unwrap_or_default()),
@@ -990,6 +1120,9 @@ async fn get_npc_items(
     code: &str,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_npc_items", code);
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());
@@ -1010,6 +1143,9 @@ async fn get_all_npcs_items(
     npc: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_npcs_items", code = %code.as_ref().unwrap_or(&ValidatedString::default()), currency = %currency.as_ref().unwrap_or(&ValidatedString::default()), npc = %npc.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());
@@ -1037,6 +1173,9 @@ async fn get_all_resources(
     name: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_resources", drop = %drop.as_ref().unwrap_or(&ValidatedString::default()), max_level = %max_level.unwrap_or(0), min_level = %min_level.unwrap_or(0), skill = %skill.as_ref().map_or("".to_string(), |s| s.to_string()), name = %name.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(skill) = &skill {
@@ -1080,11 +1219,17 @@ async fn get_all_resources(
 
 /// Retrieve the details of a resource.
 async fn get_resource(settings: Settings, code: &str) -> Result<(), Error> {
+    let span = info_span!("get_resource", code);
+    let _enter = span.enter();
+
     get(settings, &format!("/resources/{}", code), None).await
 }
 
 /// Retrieve the details of a task.
 async fn get_task(settings: Settings, code: &str) -> Result<(), Error> {
+    let span = info_span!("get_task", code);
+    let _enter = span.enter();
+
     get(settings, &format!("/tasks/list/{}", code), None).await
 }
 
@@ -1097,6 +1242,9 @@ async fn get_all_tasks(
     _type: Option<TaskType>,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_tasks", max_level = %max_level.map_or("".to_string(), |f| f.to_string()), min_level = %min_level.map_or("".to_string(), |f| f.to_string()), skill = %skill.as_ref().map_or("".to_string(), |s| s.to_string()), type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(skill) = &skill {
@@ -1136,6 +1284,9 @@ async fn get_all_tasks(
 
 /// Retrieve the details of a tasks reward.
 async fn get_tasks_reward(settings: Settings, code: &str) -> Result<(), Error> {
+    let span = info_span!("get_tasks_reward", code);
+    let _enter = span.enter();
+
     get(settings, &format!("/tasks/rewards/{}", code), None).await
 }
 
@@ -1144,6 +1295,9 @@ async fn get_all_tasks_rewards(
     settings: Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<(), Error> {
+    let span = info_span!("get_all_tasks_rewards", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -1161,11 +1315,18 @@ async fn action_move(
     y: isize,
 ) -> Result<(), Error> {
     let json = format!(r#"{{"x": {}, "y": {}}}"#, x, y);
+
+    let span = info_span!("action_move", x, y);
+    let _enter = span.enter();
+
     post(settings, &format!("/my/{}/action/move", name), &json).await
 }
 
 /// Recovers hit points by resting. (1 second per 5 HP, minimum 3 seconds)
 async fn action_rest(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("action_rest");
+    let _enter = span.enter();
+
     post(settings, &format!("/my/{}/action/rest", name), "").await
 }
 
@@ -1228,9 +1389,8 @@ async fn action_use_item(
     code: ValidatedString,
     quantity: isize,
 ) -> Result<(), Error> {
-    if quantity < 1 {
-        panic!("Quantity must be at least 1 when using an item");
-    }
+    let span = info_span!("action_use_item", code = %code, quantity);
+    let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
     post(settings, &format!("/my/{}/action/use", name), &json).await
@@ -1238,11 +1398,15 @@ async fn action_use_item(
 
 /// Start a fight against a monster on the character's map.
 async fn action_fight(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("action_fight");
+    let _enter = span.enter();
     post(settings, &format!("/my/{}/action/fight", name), "").await
 }
 
 /// Harvest a resource on the character's map.
 async fn action_gathering(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("action_gathering");
+    let _enter = span.enter();
     post(settings, &format!("/my/{}/action/gathering", name), "").await
 }
 
@@ -1253,11 +1417,8 @@ async fn action_crafting(
     code: ValidatedString,
     quantity: Option<isize>,
 ) -> Result<(), Error> {
-    if let Some(q) = quantity {
-        if q < 1 {
-            panic!("Quantity must be at least 1 when crafting an item");
-        }
-    }
+    let span = info_span!("action_crafting", code = %code, quantity = quantity.unwrap_or(1));
+    let _enter = span.enter();
 
     let json = format!(
         r#"{{"code": "{}", "quantity": {}}}"#,
@@ -1273,9 +1434,8 @@ async fn action_deposit_bank_gold(
     name: ValidatedString,
     quantity: isize,
 ) -> Result<(), Error> {
-    if quantity < 1 {
-        panic!("Quantity must be at least 1 when depositing gold");
-    }
+    let span = info_span!("action_deposit_bank_gold", quantity);
+    let _enter = span.enter();
 
     let json = format!(r#"{{"quantity": {}}}"#, quantity);
     post(
@@ -1292,11 +1452,8 @@ async fn action_deposit_bank_item(
     name: ValidatedString,
     items: Vec<(ValidatedString, isize)>,
 ) -> Result<(), Error> {
-    for (code, quantity) in &items {
-        if *quantity < 1 {
-            panic!("Quantity must be at least 1 when depositing an item");
-        }
-    }
+    let span = info_span!("action_deposit_bank_item", items = ?items);
+    let _enter = span.enter();
 
     let items_json: Vec<String> = items
         .into_iter()
@@ -1319,11 +1476,8 @@ async fn action_withdraw_bank_item(
     name: ValidatedString,
     items: Vec<(ValidatedString, isize)>,
 ) -> Result<(), Error> {
-    for (code, quantity) in &items {
-        if *quantity < 1 {
-            panic!("Quantity must be at least 1 when withdrawing an item");
-        }
-    }
+    let span = info_span!("action_withdraw_bank_item", items = ?items);
+    let _enter = span.enter();
 
     let items_json: Vec<String> = items
         .into_iter()
@@ -1346,9 +1500,8 @@ async fn action_withdraw_bank_gold(
     name: ValidatedString,
     quantity: isize,
 ) -> Result<(), Error> {
-    if quantity < 1 {
-        panic!("Quantity must be at least 1 when withdrawing gold");
-    }
+    let span = info_span!("action_withdraw_bank_gold", quantity);
+    let _enter = span.enter();
 
     let json = format!(r#"{{"quantity": {}}}"#, quantity);
     post(
@@ -1361,6 +1514,9 @@ async fn action_withdraw_bank_gold(
 
 /// Buy a 25 slots bank expansion.
 async fn action_buy_bank_expansion(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("action_buy_bank_expansion");
+    let _enter = span.enter();
+
     post(
         settings,
         &format!("/my/{}/action/bank/buy_expansion", name),
@@ -1376,9 +1532,8 @@ async fn action_npc_buy_item(
     code: ValidatedString,
     quantity: isize,
 ) -> Result<(), Error> {
-    if quantity < 1 || quantity > 100 {
-        panic!("Quantity must be between 1 and 100 when buying an item");
-    }
+    let span = info_span!("action_npc_buy_item", code = %code, quantity);
+    let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
     post(settings, &format!("/my/{}/action/npc/buy", name), &json).await
@@ -1391,9 +1546,8 @@ async fn action_npc_sell_item(
     code: ValidatedString,
     quantity: isize,
 ) -> Result<(), Error> {
-    if quantity < 1 || quantity > 100 {
-        panic!("Quantity must be between 1 and 100 when selling an item");
-    }
+    let span = info_span!("action_npc_sell_item", code = %code, quantity);
+    let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
     post(settings, &format!("/my/{}/action/npc/sell", name), &json).await
@@ -1406,11 +1560,8 @@ async fn action_recycling(
     code: ValidatedString,
     quantity: Option<isize>,
 ) -> Result<(), Error> {
-    if let Some(q) = quantity {
-        if q < 1 {
-            panic!("Quantity must be at least 1 when recycling an item");
-        }
-    }
+    let span = info_span!("action_recycling", code = %code, quantity = quantity.unwrap_or(1));
+    let _enter = span.enter();
 
     let json = format!(
         r#"{{"code": "{}", "quantity": {}}}"#,
@@ -1427,9 +1578,8 @@ async fn action_grandexchange_buy_item(
     id: String,
     quantity: isize,
 ) -> Result<(), Error> {
-    if quantity < 1 || quantity > 100 {
-        panic!("Quantity must be between 1 and 100 when buying an item");
-    }
+    let span = info_span!("action_grandexchange_buy_item", id = %id, quantity);
+    let _enter = span.enter();
 
     let json = format!(r#"{{"id": "{}", "quantity": {}}}"#, id, quantity);
     post(
@@ -1448,13 +1598,13 @@ async fn action_grandexchange_create_sell_order(
     quantity: isize,
     price: isize,
 ) -> Result<(), Error> {
-    if quantity < 1 || quantity > 100 {
-        panic!("Quantity must be between 1 and 100 when creating a sell order");
-    }
-
-    if price < 1 || price > 1_000_000_000 {
-        panic!("Price must be at least 1 and at most 1,000,000,000 when creating a sell order");
-    }
+    let span = info_span!(
+        "action_grandexchange_create_sell_order",
+        code = %code,
+        quantity,
+        price
+    );
+    let _enter = span.enter();
 
     let json = format!(
         r#"{{"code": "{}", "price": {}, "quantity": {}}}"#,
@@ -1475,6 +1625,9 @@ async fn action_grandexchange_cancel_sell_order(
     name: ValidatedString,
     id: String,
 ) -> Result<(), Error> {
+    let span = info_span!("action_grandexchange_cancel_sell_order", id = %id);
+    let _enter = span.enter();
+
     let json = format!(r#"{{"id": "{}"}}"#, id);
 
     post(
@@ -1487,16 +1640,22 @@ async fn action_grandexchange_cancel_sell_order(
 
 /// Complete a task.
 async fn action_complete_task(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("action_complete_task");
+    let _enter = span.enter();
     post(settings, &format!("/my/{}/action/task/complete", name), "").await
 }
 
 /// Exchange 6 tasks coins for a random reward. Rewards are exclusive items or resources.
 async fn action_task_exchange(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("action_task_exchange");
+    let _enter = span.enter();
     post(settings, &format!("/my/{}/action/task/exchange", name), "").await
 }
 
 /// Accepting a new task.
 async fn action_accept_new_task(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("action_accept_new_task");
+    let _enter = span.enter();
     post(settings, &format!("/my/{}/action/task/new", name), "").await
 }
 
@@ -1507,9 +1666,8 @@ async fn action_task_trade(
     code: ValidatedString,
     quantity: isize,
 ) -> Result<(), Error> {
-    if quantity < 1 {
-        panic!("Quantity must be at least 1 when trading an item");
-    }
+    let span = info_span!("action_task_trade", code = %code, quantity);
+    let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
     post(settings, &format!("/my/{}/action/task/trade", name), &json).await
@@ -1517,6 +1675,8 @@ async fn action_task_trade(
 
 /// Cancel a task for 1 tasks coin.
 async fn action_cancel_task(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+    let span = info_span!("action_cancel_task");
+    let _enter = span.enter();
     post(settings, &format!("/my/{}/action/task/cancel", name), "").await
 }
 
@@ -1527,9 +1687,8 @@ async fn action_give_gold(
     quantity: isize,
     character: ValidatedString,
 ) -> Result<(), Error> {
-    if quantity < 1 {
-        panic!("Quantity must be at least 1 when giving gold");
-    }
+    let span = info_span!("action_give_gold", quantity, character = %character);
+    let _enter = span.enter();
 
     let json = format!(
         r#"{{"quantity": {}, "character": "{}"}}"#,
@@ -1545,15 +1704,8 @@ async fn action_give_item(
     items: Vec<(ValidatedString, isize)>,
     character: ValidatedString,
 ) -> Result<(), Error> {
-    if items.len() < 1 || items.len() > 20 {
-        panic!("You must give between 1 and 20 different items");
-    }
-
-    for (code, quantity) in &items {
-        if *quantity < 1 {
-            panic!("Quantity must be at least 1 when giving an item");
-        }
-    }
+    let span = info_span!("action_give_item", items = ?items, character = %character);
+    let _enter = span.enter();
 
     let items_json: Vec<String> = items
         .into_iter()
@@ -1581,9 +1733,8 @@ async fn action_delete_item(
     code: ValidatedString,
     quantity: isize,
 ) -> Result<(), Error> {
-    if quantity < 1 {
-        panic!("Quantity must be at least 1 when deleting an item");
-    }
+    let span = info_span!("action_delete_item", code = %code, quantity);
+    let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
     post(settings, &format!("/my/{}/action/delete", name), &json).await
@@ -1595,15 +1746,22 @@ async fn action_change_skin(
     name: ValidatedString,
     skin: SkinType,
 ) -> Result<(), Error> {
-    let json = format!(r#"{{"skin": "{}"}}"#, skin);
+    let span = info_span!("action_change_skin", skin = %skin);
+    let _enter = span.enter();
+
+    let json = format!(r#"{{"skin": "{}"}}"#, skin.to_string());
     post(settings, &format!("/my/{}/action/change_skin", name), &json).await
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let settings: Settings = app_configuration();
-    // get_account_characters(settings, "shafoin".into()).await?;
 
+    tracing_subscriber::fmt().with_target(false).init();
+
+    // get_account_characters(settings, "shafoin".into()).await?;
     // post_request().await?;
+    action_move(settings, "Baba".into(), 1, 3).await?;
+
     Ok(())
 }

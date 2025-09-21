@@ -387,12 +387,12 @@ struct Settings {
 
 #[derive(Debug, Clone)]
 struct PaginationParams {
-    page: isize,
-    size: isize,
+    page: usize,
+    size: usize,
 }
 
 impl PaginationParams {
-    fn new(page: isize, size: isize) -> Result<Self, String> {
+    fn new(page: usize, size: usize) -> Result<Self, String> {
         if page < 1 {
             return Err("Page must be >= 1".to_string());
         }
@@ -434,7 +434,7 @@ fn app_configuration() -> Settings {
     config.try_deserialize().unwrap()
 }
 
-async fn post(settings: Settings, path: &str, json: &str) -> Result<(), Error> {
+async fn post(settings: Settings, path: &str, json: &str) -> Result<(serde_json::Value)> {
     let url = format!("{}{}", settings.api_url, path);
 
     let client = reqwest::Client::new();
@@ -461,26 +461,25 @@ async fn post(settings: Settings, path: &str, json: &str) -> Result<(), Error> {
 
     if status.is_success() {
         let response_body = serde_json::to_string_pretty(&response_json).unwrap();
-        info!("{} - {}", status.as_str(), response_body);
+        info!("HTTP {}", status.as_str());
+        Ok(response_json)
     } else {
         error!(
-            "{} - {:?}",
+            "HTTP {} - {:?}",
             status.as_str(),
             response_json["error"]["message"]
                 .as_str()
                 .unwrap_or_default()
         );
-        // return Err(anyhow!("{} - {}", status));
+        Err(anyhow!(status.as_u16() as usize))
     }
-
-    Ok(())
 }
 
 async fn get(
     settings: Settings,
     path: &str,
     query_params: Option<Vec<(&str, String)>>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let url = format!("{}{}", settings.api_url, path);
 
     let client = reqwest::Client::new();
@@ -506,7 +505,8 @@ async fn get(
 
     if status.is_success() {
         let response_body = serde_json::to_string_pretty(&response_json).unwrap();
-        info!("HTTP {} - {}", status.as_str(), response_body);
+        info!("HTTP {}", status.as_str());
+        Ok(response_json)
     } else {
         error!(
             "HTTP {} - {:?}",
@@ -515,28 +515,27 @@ async fn get(
                 .as_str()
                 .unwrap_or_default()
         );
-        // return Err(anyhow!("{} - {}", status));
-    }
 
-    Ok(())
+        Err(anyhow!(status.as_u16() as usize))
+    }
 }
 
 /// Return the status of the game server.
-async fn get_server_details(settings: Settings) -> Result<(), Error> {
+async fn get_server_details(settings: Settings) -> Result<(serde_json::Value)> {
     let span = info_span!("get_server_details");
     let _enter = span.enter();
     get(settings, "/", None).await
 }
 
 /// Fetch account details.
-async fn get_account_details(settings: Settings) -> Result<(), Error> {
+async fn get_account_details(settings: Settings) -> Result<(serde_json::Value)> {
     let span = info_span!("get_account_details");
     let _enter = span.enter();
     get(settings, "/my/details", None).await
 }
 
 /// Retrieve the details of a character.
-async fn get_character(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+async fn get_character(settings: Settings, name: ValidatedString) -> Result<(serde_json::Value)> {
     let span = info_span!("get_character", name = %name);
     let _enter = span.enter();
 
@@ -544,7 +543,7 @@ async fn get_character(settings: Settings, name: ValidatedString) -> Result<(), 
 }
 
 /// Fetch bank details.
-async fn get_bank_details(settings: Settings) -> Result<(), Error> {
+async fn get_bank_details(settings: Settings) -> Result<(serde_json::Value)> {
     let span = info_span!("get_bank_details");
     let _enter = span.enter();
     get(settings, "/my/bank", None).await
@@ -555,7 +554,7 @@ async fn get_bank_items(
     settings: Settings,
     item_code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_bank_items", item_code = %item_code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -577,7 +576,7 @@ async fn get_my_grandexchange_sell_orders(
     settings: Settings,
     code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_my_grandexchange_sell_orders", code = %code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -600,7 +599,7 @@ async fn get_my_grandexchange_sell_history(
     code: Option<ValidatedString>,
     id: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_my_grandexchange_sell_history", code = %code.as_ref().unwrap_or(&ValidatedString::default()), id = %id.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -627,7 +626,7 @@ async fn get_all_grandexchange_orders(
     seller: Option<ValidatedString>,
     code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_grandexchange_orders", seller = %seller.as_ref().unwrap_or(&ValidatedString::default()), code = %code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -649,7 +648,10 @@ async fn get_all_grandexchange_orders(
 }
 
 /// Retrieve the sell order of a item.
-async fn get_grandexchange_order(settings: Settings, id: ValidatedString) -> Result<(), Error> {
+async fn get_grandexchange_order(
+    settings: Settings,
+    id: ValidatedString,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_grandexchange_order", id = %id);
     let _enter = span.enter();
 
@@ -663,7 +665,7 @@ async fn get_grandexchange_sell_history(
     buyer: Option<ValidatedString>,
     seller: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_grandexchange_sell_history", code = %code, buyer = %buyer.as_ref().unwrap_or(&ValidatedString::default()), seller = %seller.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -693,7 +695,7 @@ async fn get_grandexchange_sell_history(
 async fn get_all_characters_logs(
     settings: Settings,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_characters_logs");
     let _enter = span.enter();
 
@@ -701,7 +703,10 @@ async fn get_all_characters_logs(
 }
 
 /// History of the last actions of your character.
-async fn get_character_logs(settings: Settings, character: ValidatedString) -> Result<(), Error> {
+async fn get_character_logs(
+    settings: Settings,
+    character: ValidatedString,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_characters_logs", character = %character);
     let _enter = span.enter();
 
@@ -715,7 +720,7 @@ async fn get_account_achievements(
     completed: Option<bool>,
     _type: Option<AchievementType>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_account_achievements", account = %account, completed = %completed.unwrap_or(false), _type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -742,14 +747,17 @@ async fn get_account_achievements(
 }
 
 /// Fetch account character lists.
-async fn get_account_characters(settings: Settings, account: ValidatedString) -> Result<(), Error> {
+async fn get_account_characters(
+    settings: Settings,
+    account: ValidatedString,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_account_characters", account = %account);
     let _enter = span.enter();
     get(settings, &format!("/accounts/{}/characters", account), None).await
 }
 
 /// Retrieve the details of a character.
-async fn get_account(settings: Settings, account: ValidatedString) -> Result<(), Error> {
+async fn get_account(settings: Settings, account: ValidatedString) -> Result<(serde_json::Value)> {
     let span = info_span!("get_account", account = %account);
     let _enter = span.enter();
 
@@ -761,7 +769,7 @@ async fn get_all_achievements(
     settings: Settings,
     _type: Option<AchievementType>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_achievements", _type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -779,7 +787,7 @@ async fn get_all_achievements(
 }
 
 /// Retrieve the details of a achievement.
-async fn get_achievement(settings: Settings, code: ValidatedString) -> Result<(), Error> {
+async fn get_achievement(settings: Settings, code: ValidatedString) -> Result<(serde_json::Value)> {
     let span = info_span!("get_achievement", code = %code);
     let _enter = span.enter();
 
@@ -790,7 +798,7 @@ async fn get_achievement(settings: Settings, code: ValidatedString) -> Result<()
 async fn get_all_badges(
     settings: Settings,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_badges", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -804,7 +812,7 @@ async fn get_all_badges(
 }
 
 /// Retrieve the details of a badge.
-async fn get_badge(settings: Settings, code: &str) -> Result<(), Error> {
+async fn get_badge(settings: Settings, code: &str) -> Result<(serde_json::Value)> {
     let span = info_span!("get_badge", code = %code);
     let _enter = span.enter();
 
@@ -815,7 +823,7 @@ async fn get_badge(settings: Settings, code: &str) -> Result<(), Error> {
 async fn get_all_effects(
     settings: Settings,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_effects", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -827,7 +835,7 @@ async fn get_all_effects(
 }
 
 /// Retrieve the details of a badge.
-async fn get_effect(settings: Settings, code: &str) -> Result<(), Error> {
+async fn get_effect(settings: Settings, code: &str) -> Result<(serde_json::Value)> {
     let span = info_span!("get_effect", code = %code);
     let _enter = span.enter();
 
@@ -839,7 +847,7 @@ async fn get_all_events(
     settings: Settings,
     _type: Option<EventType>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_events", _type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -857,7 +865,7 @@ async fn get_all_events(
 async fn get_all_active_events(
     settings: Settings,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_active_events", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -873,12 +881,12 @@ async fn get_all_items(
     settings: Settings,
     craft_material: Option<ValidatedString>,
     craft_skill: Option<Skill>,
-    max_level: Option<isize>,
-    min_level: Option<isize>,
+    max_level: Option<usize>,
+    min_level: Option<usize>,
     name: Option<ValidatedStringWithSpaces>,
     _type: Option<ItemType>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_items", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()), craft_material = %craft_material.as_ref().unwrap_or(&ValidatedString::default()), craft_skill = %craft_skill.as_ref().map_or("".to_string(), |s| s.to_string()), max_level = %max_level.unwrap_or(0), min_level = %min_level.unwrap_or(0), name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), _type = %_type.as_ref().map_or("".to_string(), |t| t.as_str().to_string()));
     let _enter = span.enter();
 
@@ -928,7 +936,7 @@ async fn get_all_items(
 }
 
 /// Retrieve the details of a item.
-async fn get_item(settings: Settings, code: &str) -> Result<(), Error> {
+async fn get_item(settings: Settings, code: &str) -> Result<(serde_json::Value)> {
     let span = info_span!("get_item", code);
     let _enter = span.enter();
     get(settings, &format!("/items/{}", code), None).await
@@ -940,7 +948,7 @@ async fn get_characters_leaderboard(
     name: Option<ValidatedStringWithSpaces>,
     sort: Option<Skill>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_characters_leaderboard", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), sort = %sort.as_ref().map_or("".to_string(), |s| s.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -967,7 +975,7 @@ async fn get_account_leaderboard(
     name: Option<ValidatedStringWithSpaces>,
     sort: Option<ScoreType>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_account_leaderboard", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), sort = %sort.as_ref().map_or("".to_string(), |s| s.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -994,7 +1002,7 @@ async fn get_all_maps(
     content_code: Option<ValidatedString>,
     content_type: Option<MapContentType>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_maps", content_code = %content_code.as_ref().unwrap_or(&ValidatedString::default()), content_type = %content_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -1016,7 +1024,7 @@ async fn get_all_maps(
 }
 
 /// Retrieve the details of a map.
-async fn get_map(settings: Settings, x: &str, y: &str) -> Result<(), Error> {
+async fn get_map(settings: Settings, x: &str, y: &str) -> Result<(serde_json::Value)> {
     let span = info_span!("get_map", x, y);
     let _enter = span.enter();
 
@@ -1027,11 +1035,11 @@ async fn get_map(settings: Settings, x: &str, y: &str) -> Result<(), Error> {
 async fn get_all_monsters(
     settings: Settings,
     drop: Option<ValidatedString>,
-    max_level: Option<isize>,
-    min_level: Option<isize>,
+    max_level: Option<usize>,
+    min_level: Option<usize>,
     name: Option<ValidatedStringWithSpaces>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_monsters", drop = %drop.as_ref().unwrap_or(&ValidatedString::default()), max_level = %max_level.unwrap_or(0), min_level = %min_level.unwrap_or(0), name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -1067,7 +1075,7 @@ async fn get_all_monsters(
 }
 
 /// Retrieve the details of a monster.
-async fn get_monster(settings: Settings, code: &str) -> Result<(), Error> {
+async fn get_monster(settings: Settings, code: &str) -> Result<(serde_json::Value)> {
     let span = info_span!("get_monster", code);
     let _enter = span.enter();
 
@@ -1080,7 +1088,7 @@ async fn get_all_npcs(
     name: Option<ValidatedStringWithSpaces>,
     _type: Option<NPCType>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_npcs", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -1102,7 +1110,7 @@ async fn get_all_npcs(
 }
 
 /// Retrieve the details of a NPC.
-async fn get_npc(settings: Settings, code: Option<ValidatedString>) -> Result<(), Error> {
+async fn get_npc(settings: Settings, code: Option<ValidatedString>) -> Result<(serde_json::Value)> {
     let span = info_span!("get_npc", code = %code.as_ref().unwrap_or(&ValidatedString::default()));
     let _enter = span.enter();
 
@@ -1119,7 +1127,7 @@ async fn get_npc_items(
     settings: Settings,
     code: &str,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_npc_items", code);
     let _enter = span.enter();
 
@@ -1142,7 +1150,7 @@ async fn get_all_npcs_items(
     currency: Option<ValidatedString>,
     npc: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_npcs_items", code = %code.as_ref().unwrap_or(&ValidatedString::default()), currency = %currency.as_ref().unwrap_or(&ValidatedString::default()), npc = %npc.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -1167,12 +1175,12 @@ async fn get_all_npcs_items(
 async fn get_all_resources(
     settings: Settings,
     drop: Option<ValidatedString>,
-    max_level: Option<isize>,
-    min_level: Option<isize>,
+    max_level: Option<usize>,
+    min_level: Option<usize>,
     skill: Option<Skill>,
     name: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_resources", drop = %drop.as_ref().unwrap_or(&ValidatedString::default()), max_level = %max_level.unwrap_or(0), min_level = %min_level.unwrap_or(0), skill = %skill.as_ref().map_or("".to_string(), |s| s.to_string()), name = %name.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -1218,7 +1226,7 @@ async fn get_all_resources(
 }
 
 /// Retrieve the details of a resource.
-async fn get_resource(settings: Settings, code: &str) -> Result<(), Error> {
+async fn get_resource(settings: Settings, code: &str) -> Result<(serde_json::Value)> {
     let span = info_span!("get_resource", code);
     let _enter = span.enter();
 
@@ -1226,7 +1234,7 @@ async fn get_resource(settings: Settings, code: &str) -> Result<(), Error> {
 }
 
 /// Retrieve the details of a task.
-async fn get_task(settings: Settings, code: &str) -> Result<(), Error> {
+async fn get_task(settings: Settings, code: &str) -> Result<(serde_json::Value)> {
     let span = info_span!("get_task", code);
     let _enter = span.enter();
 
@@ -1236,12 +1244,12 @@ async fn get_task(settings: Settings, code: &str) -> Result<(), Error> {
 /// Fetch the list of all tasks.
 async fn get_all_tasks(
     settings: Settings,
-    max_level: Option<isize>,
-    min_level: Option<isize>,
+    max_level: Option<usize>,
+    min_level: Option<usize>,
     skill: Option<Skill>,
     _type: Option<TaskType>,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_tasks", max_level = %max_level.map_or("".to_string(), |f| f.to_string()), min_level = %min_level.map_or("".to_string(), |f| f.to_string()), skill = %skill.as_ref().map_or("".to_string(), |s| s.to_string()), type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -1283,7 +1291,7 @@ async fn get_all_tasks(
 }
 
 /// Retrieve the details of a tasks reward.
-async fn get_tasks_reward(settings: Settings, code: &str) -> Result<(), Error> {
+async fn get_tasks_reward(settings: Settings, code: &str) -> Result<(serde_json::Value)> {
     let span = info_span!("get_tasks_reward", code);
     let _enter = span.enter();
 
@@ -1294,7 +1302,7 @@ async fn get_tasks_reward(settings: Settings, code: &str) -> Result<(), Error> {
 async fn get_all_tasks_rewards(
     settings: Settings,
     pagination: Option<PaginationParams>,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("get_all_tasks_rewards", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
@@ -1311,9 +1319,9 @@ async fn get_all_tasks_rewards(
 async fn action_move(
     settings: Settings,
     name: ValidatedString,
-    x: isize,
-    y: isize,
-) -> Result<(), Error> {
+    x: usize,
+    y: usize,
+) -> Result<(serde_json::Value)> {
     let json = format!(r#"{{"x": {}, "y": {}}}"#, x, y);
 
     let span = info_span!("action_move", x, y);
@@ -1323,7 +1331,7 @@ async fn action_move(
 }
 
 /// Recovers hit points by resting. (1 second per 5 HP, minimum 3 seconds)
-async fn action_rest(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+async fn action_rest(settings: Settings, name: ValidatedString) -> Result<(serde_json::Value)> {
     let span = info_span!("action_rest");
     let _enter = span.enter();
 
@@ -1336,8 +1344,8 @@ async fn action_equip_item(
     name: ValidatedString,
     code: ValidatedString,
     slot: EquipmentSlot,
-    quantity: Option<isize>,
-) -> Result<(), Error> {
+    quantity: Option<usize>,
+) -> Result<(serde_json::Value)> {
     if (slot == EquipmentSlot::Utility1 || slot == EquipmentSlot::Utility2) {
         if let Some(q) = quantity {
             if q < 1 || q > 100 {
@@ -1362,8 +1370,8 @@ async fn action_unequip_item(
     settings: Settings,
     name: ValidatedString,
     slot: EquipmentSlot,
-    quantity: Option<isize>,
-) -> Result<(), Error> {
+    quantity: Option<usize>,
+) -> Result<(serde_json::Value)> {
     if (slot == EquipmentSlot::Utility1 || slot == EquipmentSlot::Utility2) {
         if let Some(q) = quantity {
             if q < 1 || q > 100 {
@@ -1387,8 +1395,8 @@ async fn action_use_item(
     settings: Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: isize,
-) -> Result<(), Error> {
+    quantity: usize,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_use_item", code = %code, quantity);
     let _enter = span.enter();
 
@@ -1397,14 +1405,17 @@ async fn action_use_item(
 }
 
 /// Start a fight against a monster on the character's map.
-async fn action_fight(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+async fn action_fight(settings: Settings, name: ValidatedString) -> Result<(serde_json::Value)> {
     let span = info_span!("action_fight");
     let _enter = span.enter();
     post(settings, &format!("/my/{}/action/fight", name), "").await
 }
 
 /// Harvest a resource on the character's map.
-async fn action_gathering(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+async fn action_gathering(
+    settings: Settings,
+    name: ValidatedString,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_gathering");
     let _enter = span.enter();
     post(settings, &format!("/my/{}/action/gathering", name), "").await
@@ -1415,8 +1426,8 @@ async fn action_crafting(
     settings: Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: Option<isize>,
-) -> Result<(), Error> {
+    quantity: Option<usize>,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_crafting", code = %code, quantity = quantity.unwrap_or(1));
     let _enter = span.enter();
 
@@ -1432,8 +1443,8 @@ async fn action_crafting(
 async fn action_deposit_bank_gold(
     settings: Settings,
     name: ValidatedString,
-    quantity: isize,
-) -> Result<(), Error> {
+    quantity: usize,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_deposit_bank_gold", quantity);
     let _enter = span.enter();
 
@@ -1450,8 +1461,8 @@ async fn action_deposit_bank_gold(
 async fn action_deposit_bank_item(
     settings: Settings,
     name: ValidatedString,
-    items: Vec<(ValidatedString, isize)>,
-) -> Result<(), Error> {
+    items: Vec<(ValidatedString, usize)>,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_deposit_bank_item", items = ?items);
     let _enter = span.enter();
 
@@ -1474,8 +1485,8 @@ async fn action_deposit_bank_item(
 async fn action_withdraw_bank_item(
     settings: Settings,
     name: ValidatedString,
-    items: Vec<(ValidatedString, isize)>,
-) -> Result<(), Error> {
+    items: Vec<(ValidatedString, usize)>,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_withdraw_bank_item", items = ?items);
     let _enter = span.enter();
 
@@ -1498,8 +1509,8 @@ async fn action_withdraw_bank_item(
 async fn action_withdraw_bank_gold(
     settings: Settings,
     name: ValidatedString,
-    quantity: isize,
-) -> Result<(), Error> {
+    quantity: usize,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_withdraw_bank_gold", quantity);
     let _enter = span.enter();
 
@@ -1513,7 +1524,10 @@ async fn action_withdraw_bank_gold(
 }
 
 /// Buy a 25 slots bank expansion.
-async fn action_buy_bank_expansion(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+async fn action_buy_bank_expansion(
+    settings: Settings,
+    name: ValidatedString,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_buy_bank_expansion");
     let _enter = span.enter();
 
@@ -1530,8 +1544,8 @@ async fn action_npc_buy_item(
     settings: Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: isize,
-) -> Result<(), Error> {
+    quantity: usize,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_npc_buy_item", code = %code, quantity);
     let _enter = span.enter();
 
@@ -1544,8 +1558,8 @@ async fn action_npc_sell_item(
     settings: Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: isize,
-) -> Result<(), Error> {
+    quantity: usize,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_npc_sell_item", code = %code, quantity);
     let _enter = span.enter();
 
@@ -1558,8 +1572,8 @@ async fn action_recycling(
     settings: Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: Option<isize>,
-) -> Result<(), Error> {
+    quantity: Option<usize>,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_recycling", code = %code, quantity = quantity.unwrap_or(1));
     let _enter = span.enter();
 
@@ -1576,8 +1590,8 @@ async fn action_grandexchange_buy_item(
     settings: Settings,
     name: ValidatedString,
     id: String,
-    quantity: isize,
-) -> Result<(), Error> {
+    quantity: usize,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_grandexchange_buy_item", id = %id, quantity);
     let _enter = span.enter();
 
@@ -1595,9 +1609,9 @@ async fn action_grandexchange_create_sell_order(
     settings: Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: isize,
-    price: isize,
-) -> Result<(), Error> {
+    quantity: usize,
+    price: usize,
+) -> Result<(serde_json::Value)> {
     let span = info_span!(
         "action_grandexchange_create_sell_order",
         code = %code,
@@ -1624,7 +1638,7 @@ async fn action_grandexchange_cancel_sell_order(
     settings: Settings,
     name: ValidatedString,
     id: String,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_grandexchange_cancel_sell_order", id = %id);
     let _enter = span.enter();
 
@@ -1639,21 +1653,30 @@ async fn action_grandexchange_cancel_sell_order(
 }
 
 /// Complete a task.
-async fn action_complete_task(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+async fn action_complete_task(
+    settings: Settings,
+    name: ValidatedString,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_complete_task");
     let _enter = span.enter();
     post(settings, &format!("/my/{}/action/task/complete", name), "").await
 }
 
 /// Exchange 6 tasks coins for a random reward. Rewards are exclusive items or resources.
-async fn action_task_exchange(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+async fn action_task_exchange(
+    settings: Settings,
+    name: ValidatedString,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_task_exchange");
     let _enter = span.enter();
     post(settings, &format!("/my/{}/action/task/exchange", name), "").await
 }
 
 /// Accepting a new task.
-async fn action_accept_new_task(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+async fn action_accept_new_task(
+    settings: Settings,
+    name: ValidatedString,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_accept_new_task");
     let _enter = span.enter();
     post(settings, &format!("/my/{}/action/task/new", name), "").await
@@ -1664,8 +1687,8 @@ async fn action_task_trade(
     settings: Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: isize,
-) -> Result<(), Error> {
+    quantity: usize,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_task_trade", code = %code, quantity);
     let _enter = span.enter();
 
@@ -1674,7 +1697,10 @@ async fn action_task_trade(
 }
 
 /// Cancel a task for 1 tasks coin.
-async fn action_cancel_task(settings: Settings, name: ValidatedString) -> Result<(), Error> {
+async fn action_cancel_task(
+    settings: Settings,
+    name: ValidatedString,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_cancel_task");
     let _enter = span.enter();
     post(settings, &format!("/my/{}/action/task/cancel", name), "").await
@@ -1684,9 +1710,9 @@ async fn action_cancel_task(settings: Settings, name: ValidatedString) -> Result
 async fn action_give_gold(
     settings: Settings,
     name: ValidatedString,
-    quantity: isize,
+    quantity: usize,
     character: ValidatedString,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_give_gold", quantity, character = %character);
     let _enter = span.enter();
 
@@ -1701,9 +1727,9 @@ async fn action_give_gold(
 async fn action_give_item(
     settings: Settings,
     name: ValidatedString,
-    items: Vec<(ValidatedString, isize)>,
+    items: Vec<(ValidatedString, usize)>,
     character: ValidatedString,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_give_item", items = ?items, character = %character);
     let _enter = span.enter();
 
@@ -1731,8 +1757,8 @@ async fn action_delete_item(
     settings: Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: isize,
-) -> Result<(), Error> {
+    quantity: usize,
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_delete_item", code = %code, quantity);
     let _enter = span.enter();
 
@@ -1745,7 +1771,7 @@ async fn action_change_skin(
     settings: Settings,
     name: ValidatedString,
     skin: SkinType,
-) -> Result<(), Error> {
+) -> Result<(serde_json::Value)> {
     let span = info_span!("action_change_skin", skin = %skin);
     let _enter = span.enter();
 
@@ -1754,14 +1780,22 @@ async fn action_change_skin(
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> Result<()> {
     let settings: Settings = app_configuration();
 
-    tracing_subscriber::fmt().with_target(false).init();
+    // tracing_subscriber::fmt().with_target(false).init(); // affichage terminal
+
+    let file_appender = tracing_appender::rolling::daily("./logs", "bot.log");
+    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .with_writer(non_blocking)
+        .with_ansi(false)
+        .init();
 
     // get_account_characters(settings, "shafoin".into()).await?;
     // post_request().await?;
-    action_move(settings, "Baba".into(), 1, 3).await?;
+    action_move(settings, "Baba".into(), 1, 6).await;
 
     Ok(())
 }

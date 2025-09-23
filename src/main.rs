@@ -2,7 +2,10 @@
 
 use anyhow::Result;
 
-use crate::{api::my_characters::*, types::common::settings::Settings};
+use crate::{
+    api::{accounts::get_account_characters, characters::get_character, my_characters::*},
+    types::{common::settings::Settings, game::character::Character},
+};
 
 pub mod api;
 pub mod config;
@@ -15,9 +18,14 @@ async fn main() -> Result<()> {
 
     logging::init_logging();
 
-    // get_account_characters(settings, "shafoin".into()).await?;
-    // post_request().await?;
-    let _ = action_move(settings, "Baba".into(), 1, 6).await;
+    match get_character(settings, "Baba".into()).await {
+        Ok(m) => {
+            println!("Character info: {}", serde_json::to_string_pretty(&m)?);
+            let character: Character = serde_json::from_value(m["data"].clone())?;
+            println!("Character struct: {:?}", character);
+        }
+        Err(e) => eprintln!("Error moving action: {}", e),
+    }
 
     Ok(())
 }

@@ -13,6 +13,7 @@ use crate::{
 };
 
 /// List of all achievements.
+/// https://api.artifactsmmo.com/docs/#/operations/get_all_achievements_achievements_get
 pub async fn get_all_achievements(
     settings: Settings,
     _type: Option<AchievementType>,
@@ -35,7 +36,11 @@ pub async fn get_all_achievements(
 }
 
 /// Retrieve the details of a achievement.
-pub async fn get_achievement(settings: Settings, code: ValidatedString) -> Result<serde_json::Value> {
+/// https://api.artifactsmmo.com/docs/#/operations/get_achievement_achievements__code__get
+pub async fn get_achievement(
+    settings: Settings,
+    code: ValidatedString,
+) -> Result<serde_json::Value> {
     let span = info_span!("get_achievement", code = %code);
     let _enter = span.enter();
 

@@ -13,6 +13,7 @@ use crate::{
 };
 
 /// Fetch leaderboard details.
+/// https://api.artifactsmmo.com/docs/#/operations/get_characters_leaderboard_leaderboard_characters_get
 pub async fn get_characters_leaderboard(
     settings: Settings,
     name: Option<ValidatedStringWithSpaces>,
@@ -40,6 +41,7 @@ pub async fn get_characters_leaderboard(
 }
 
 /// Fetch leaderboard details.
+/// https://api.artifactsmmo.com/docs/#/operations/get_accounts_leaderboard_leaderboard_accounts_get
 pub async fn get_account_leaderboard(
     settings: Settings,
     name: Option<ValidatedStringWithSpaces>,

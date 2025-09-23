@@ -13,6 +13,7 @@ use crate::{
 };
 
 /// Fetch maps details.
+/// https://api.artifactsmmo.com/docs/#/operations/get_all_maps_maps_get
 pub async fn get_all_maps(
     settings: Settings,
     content_code: Option<ValidatedString>,
@@ -40,6 +41,7 @@ pub async fn get_all_maps(
 }
 
 /// Retrieve the details of a map.
+/// https://api.artifactsmmo.com/docs/#/operations/get_map_maps__x___y__get
 pub async fn get_map(settings: Settings, x: &str, y: &str) -> Result<serde_json::Value> {
     let span = info_span!("get_map", x, y);
     let _enter = span.enter();

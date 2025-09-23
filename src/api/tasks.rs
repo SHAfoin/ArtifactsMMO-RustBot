@@ -7,6 +7,7 @@ use anyhow::Result;
 use tracing::info_span;
 
 /// Fetch the list of all tasks.
+/// https://api.artifactsmmo.com/docs/#/operations/get_all_tasks_tasks_list_get
 pub async fn get_all_tasks(
     settings: Settings,
     max_level: Option<usize>,
@@ -56,6 +57,7 @@ pub async fn get_all_tasks(
 }
 
 /// Retrieve the details of a task.
+/// https://api.artifactsmmo.com/docs/#/operations/get_task_tasks_list__code__get
 pub async fn get_task(settings: Settings, code: &str) -> Result<serde_json::Value> {
     let span = info_span!("get_task", code);
     let _enter = span.enter();
@@ -64,6 +66,7 @@ pub async fn get_task(settings: Settings, code: &str) -> Result<serde_json::Valu
 }
 
 /// Retrieve the details of a tasks reward.
+/// https://api.artifactsmmo.com/docs/#/operations/get_tasks_reward_tasks_rewards__code__get
 pub async fn get_tasks_reward(settings: Settings, code: &str) -> Result<serde_json::Value> {
     let span = info_span!("get_tasks_reward", code);
     let _enter = span.enter();
@@ -72,6 +75,7 @@ pub async fn get_tasks_reward(settings: Settings, code: &str) -> Result<serde_js
 }
 
 /// Fetch the list of all tasks rewards. To obtain these rewards, you must exchange 6 task coins with a tasks master.
+/// https://api.artifactsmmo.com/docs/#/operations/get_all_tasks_rewards_tasks_rewards_get
 pub async fn get_all_tasks_rewards(
     settings: Settings,
     pagination: Option<PaginationParams>,

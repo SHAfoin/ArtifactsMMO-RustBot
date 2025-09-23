@@ -13,6 +13,7 @@ use crate::{
 };
 
 /// Retrieve the achievements of a account.
+/// https://api.artifactsmmo.com/docs/#/operations/get_account_achievements_accounts__account__achievements_get
 pub async fn get_account_achievements(
     settings: Settings,
     account: ValidatedString,
@@ -46,6 +47,7 @@ pub async fn get_account_achievements(
 }
 
 /// Fetch account character lists.
+/// https://api.artifactsmmo.com/docs/#/operations/get_account_characters_accounts__account__characters_get
 pub async fn get_account_characters(
     settings: Settings,
     account: ValidatedString,
@@ -56,6 +58,7 @@ pub async fn get_account_characters(
 }
 
 /// Retrieve the details of a character.
+/// https://api.artifactsmmo.com/docs/#/operations/get_account_accounts__account__get
 pub async fn get_account(
     settings: Settings,
     account: ValidatedString,

@@ -9,6 +9,7 @@ use crate::{
 };
 
 /// Fetch all sell orders.
+/// https://api.artifactsmmo.com/docs/#/operations/get_ge_sell_order_grandexchange_orders__id__get
 pub async fn get_all_grandexchange_orders(
     settings: Settings,
     seller: Option<ValidatedString>,
@@ -36,6 +37,7 @@ pub async fn get_all_grandexchange_orders(
 }
 
 /// Retrieve the sell order of a item.
+/// https://api.artifactsmmo.com/docs/#/operations/get_ge_sell_orders_grandexchange_orders_get
 pub async fn get_grandexchange_order(
     settings: Settings,
     id: ValidatedString,
@@ -47,6 +49,7 @@ pub async fn get_grandexchange_order(
 }
 
 // For a specific item only, print the last 7 days of sell history
+/// https://api.artifactsmmo.com/docs/#/operations/get_ge_sell_history_grandexchange_history__code__get
 pub async fn get_grandexchange_sell_history(
     settings: Settings,
     code: ValidatedString,

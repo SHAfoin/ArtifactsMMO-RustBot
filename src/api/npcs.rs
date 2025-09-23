@@ -14,6 +14,7 @@ use crate::{
 };
 
 /// Fetch NPCs details.
+/// https://api.artifactsmmo.com/docs/#/operations/get_all_npcs_npcs_details_get
 pub async fn get_all_npcs(
     settings: Settings,
     name: Option<ValidatedStringWithSpaces>,
@@ -41,6 +42,7 @@ pub async fn get_all_npcs(
 }
 
 /// Retrieve the details of a NPC.
+/// https://api.artifactsmmo.com/docs/#/operations/get_npc_npcs_details__code__get
 pub async fn get_npc(
     settings: Settings,
     code: Option<ValidatedString>,
@@ -57,6 +59,7 @@ pub async fn get_npc(
 }
 
 /// Retrieve the items list of a NPC. If the NPC has items to buy, sell or trade, they will be displayed.
+/// https://api.artifactsmmo.com/docs/#/operations/get_npc_items_npcs_items__code__get
 pub async fn get_npc_items(
     settings: Settings,
     code: &str,
@@ -78,6 +81,7 @@ pub async fn get_npc_items(
 }
 
 /// Retrieve the list of all NPC items.
+/// https://api.artifactsmmo.com/docs/#/operations/get_all_npcs_items_npcs_items_get
 pub async fn get_all_npcs_items(
     settings: Settings,
     code: Option<ValidatedString>,

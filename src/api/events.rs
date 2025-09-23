@@ -10,6 +10,7 @@ use crate::{
 };
 
 /// Fetch events details.
+/// https://api.artifactsmmo.com/docs/#/operations/get_all_active_events_events_active_get
 pub async fn get_all_events(
     settings: Settings,
     _type: Option<EventType>,
@@ -29,6 +30,7 @@ pub async fn get_all_events(
 }
 
 /// Fetch active events details.
+/// https://api.artifactsmmo.com/docs/#/operations/get_all_events_events_get
 pub async fn get_all_active_events(
     settings: Settings,
     pagination: Option<PaginationParams>,

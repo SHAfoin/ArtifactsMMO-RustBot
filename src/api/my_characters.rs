@@ -13,6 +13,7 @@ use crate::{
 };
 
 /// History of the last 250 actions of all your characters.
+/// https://api.artifactsmmo.com/docs/#/operations/get_all_characters_logs_my_logs_get
 pub async fn get_all_characters_logs(
     settings: Settings,
     pagination: Option<PaginationParams>,
@@ -30,6 +31,7 @@ pub async fn get_all_characters_logs(
 }
 
 /// History of the last actions of your character.
+/// https://api.artifactsmmo.com/docs/#/operations/get_character_logs_my_logs__name__get
 pub async fn get_character_logs(
     settings: Settings,
     character: ValidatedString,
@@ -41,6 +43,7 @@ pub async fn get_character_logs(
 }
 
 /// List of your characters.
+/// https://api.artifactsmmo.com/docs/#/operations/get_my_characters_my_characters_get
 pub async fn get_my_characters(settings: Settings) -> Result<serde_json::Value> {
     let span = info_span!("get_my_characters");
     let _enter = span.enter();
@@ -49,6 +52,7 @@ pub async fn get_my_characters(settings: Settings) -> Result<serde_json::Value> 
 }
 
 /// Moves a character on the map using the map's X and Y position.
+/// https://api.artifactsmmo.com/docs/#/operations/action_move_my__name__action_move_post
 pub async fn action_move(
     settings: Settings,
     name: ValidatedString,
@@ -64,6 +68,7 @@ pub async fn action_move(
 }
 
 /// Recovers hit points by resting. (1 second per 5 HP, minimum 3 seconds)
+/// https://api.artifactsmmo.com/docs/#/operations/action_rest_my__name__action_rest_post
 pub async fn action_rest(settings: Settings, name: ValidatedString) -> Result<serde_json::Value> {
     let span = info_span!("action_rest");
     let _enter = span.enter();
@@ -72,6 +77,7 @@ pub async fn action_rest(settings: Settings, name: ValidatedString) -> Result<se
 }
 
 /// Equip an item on your character.
+/// https://api.artifactsmmo.com/docs/#/operations/action_equip_item_my__name__action_equip_post
 pub async fn action_equip_item(
     settings: Settings,
     name: ValidatedString,
@@ -99,6 +105,7 @@ pub async fn action_equip_item(
 }
 
 /// Unequip an item on your character.
+/// https://api.artifactsmmo.com/docs/#/operations/action_unequip_item_my__name__action_unequip_post
 pub async fn action_unequip_item(
     settings: Settings,
     name: ValidatedString,
@@ -124,6 +131,7 @@ pub async fn action_unequip_item(
 }
 
 /// Use an item as a consumable.
+/// https://api.artifactsmmo.com/docs/#/operations/action_use_item_my__name__action_use_post
 pub async fn action_use_item(
     settings: Settings,
     name: ValidatedString,
@@ -138,6 +146,7 @@ pub async fn action_use_item(
 }
 
 /// Start a fight against a monster on the character's map.
+/// https://api.artifactsmmo.com/docs/#/operations/action_fight_my__name__action_fight_post
 pub async fn action_fight(settings: Settings, name: ValidatedString) -> Result<serde_json::Value> {
     let span = info_span!("action_fight");
     let _enter = span.enter();
@@ -145,6 +154,7 @@ pub async fn action_fight(settings: Settings, name: ValidatedString) -> Result<s
 }
 
 /// Harvest a resource on the character's map.
+/// https://api.artifactsmmo.com/docs/#/operations/action_gathering_my__name__action_gathering_post
 pub async fn action_gathering(
     settings: Settings,
     name: ValidatedString,
@@ -155,6 +165,7 @@ pub async fn action_gathering(
 }
 
 /// Crafting an item. The character must be on a map with a workshop.
+/// https://api.artifactsmmo.com/docs/#/operations/action_crafting_my__name__action_crafting_post
 pub async fn action_crafting(
     settings: Settings,
     name: ValidatedString,
@@ -173,6 +184,7 @@ pub async fn action_crafting(
 }
 
 /// Deposit gold in a bank on the character's map.
+/// https://api.artifactsmmo.com/docs/#/operations/action_deposit_bank_gold_my__name__action_bank_deposit_gold_post
 pub async fn action_deposit_bank_gold(
     settings: Settings,
     name: ValidatedString,
@@ -191,6 +203,7 @@ pub async fn action_deposit_bank_gold(
 }
 
 /// Deposit multiple items in a bank on the character's map. The cooldown will be 3 seconds multiplied by the number of different items withdrawn.
+/// https://api.artifactsmmo.com/docs/#/operations/action_deposit_bank_item_my__name__action_bank_deposit_item_post
 pub async fn action_deposit_bank_item(
     settings: Settings,
     name: ValidatedString,
@@ -215,6 +228,7 @@ pub async fn action_deposit_bank_item(
 }
 
 /// Take items from your bank and put them in the character's inventory. The cooldown will be 3 seconds multiplied by the number of different items withdrawn.
+/// https://api.artifactsmmo.com/docs/#/operations/action_withdraw_bank_item_my__name__action_bank_withdraw_item_post
 pub async fn action_withdraw_bank_item(
     settings: Settings,
     name: ValidatedString,
@@ -239,6 +253,7 @@ pub async fn action_withdraw_bank_item(
 }
 
 /// Withdraw gold from your bank.
+/// https://api.artifactsmmo.com/docs/#/operations/action_withdraw_bank_gold_my__name__action_bank_withdraw_gold_post
 pub async fn action_withdraw_bank_gold(
     settings: Settings,
     name: ValidatedString,
@@ -257,6 +272,7 @@ pub async fn action_withdraw_bank_gold(
 }
 
 /// Buy a 25 slots bank expansion.
+/// https://api.artifactsmmo.com/docs/#/operations/action_buy_bank_expansion_my__name__action_bank_buy_expansion_post
 pub async fn action_buy_bank_expansion(
     settings: Settings,
     name: ValidatedString,
@@ -273,6 +289,7 @@ pub async fn action_buy_bank_expansion(
 }
 
 /// Buy an item from an NPC on the character's map.
+/// https://api.artifactsmmo.com/docs/#/operations/action_npc_buy_item_my__name__action_npc_buy_post
 pub async fn action_npc_buy_item(
     settings: Settings,
     name: ValidatedString,
@@ -287,6 +304,7 @@ pub async fn action_npc_buy_item(
 }
 
 /// Sell an item to an NPC on the character's map.
+/// https://api.artifactsmmo.com/docs/#/operations/action_npc_sell_item_my__name__action_npc_sell_post
 pub async fn action_npc_sell_item(
     settings: Settings,
     name: ValidatedString,
@@ -301,6 +319,7 @@ pub async fn action_npc_sell_item(
 }
 
 /// Recycling an item. The character must be on a map with a workshop (only for equipments and weapons).
+/// https://api.artifactsmmo.com/docs/#/operations/action_recycling_my__name__action_recycling_post
 pub async fn action_recycling(
     settings: Settings,
     name: ValidatedString,
@@ -319,6 +338,7 @@ pub async fn action_recycling(
 }
 
 /// Buy an item at the Grand Exchange on the character's map.
+/// https://api.artifactsmmo.com/docs/#/operations/action_ge_buy_item_my__name__action_grandexchange_buy_post
 pub async fn action_grandexchange_buy_item(
     settings: Settings,
     name: ValidatedString,
@@ -338,6 +358,7 @@ pub async fn action_grandexchange_buy_item(
 }
 
 /// Create a sell order at the Grand Exchange on the character's map. Please note there is a 3% listing tax, charged at the time of posting, on the total price.
+/// https://api.artifactsmmo.com/docs/#/operations/action_ge_create_sell_order_my__name__action_grandexchange_sell_post
 pub async fn action_grandexchange_create_sell_order(
     settings: Settings,
     name: ValidatedString,
@@ -367,6 +388,7 @@ pub async fn action_grandexchange_create_sell_order(
 }
 
 /// Cancel a sell order at the Grand Exchange on the character's map.
+/// https://api.artifactsmmo.com/docs/#/operations/action_ge_cancel_sell_order_my__name__action_grandexchange_cancel_post
 pub async fn action_grandexchange_cancel_sell_order(
     settings: Settings,
     name: ValidatedString,
@@ -386,6 +408,7 @@ pub async fn action_grandexchange_cancel_sell_order(
 }
 
 /// Complete a task.
+/// https://api.artifactsmmo.com/docs/#/operations/action_complete_task_my__name__action_task_complete_post
 pub async fn action_complete_task(
     settings: Settings,
     name: ValidatedString,
@@ -396,6 +419,7 @@ pub async fn action_complete_task(
 }
 
 /// Exchange 6 tasks coins for a random reward. Rewards are exclusive items or resources.
+/// https://api.artifactsmmo.com/docs/#/operations/action_task_exchange_my__name__action_task_exchange_post
 pub async fn action_task_exchange(
     settings: Settings,
     name: ValidatedString,
@@ -406,6 +430,7 @@ pub async fn action_task_exchange(
 }
 
 /// Accepting a new task.
+/// https://api.artifactsmmo.com/docs/#/operations/action_accept_new_task_my__name__action_task_new_post
 pub async fn action_accept_new_task(
     settings: Settings,
     name: ValidatedString,
@@ -416,6 +441,7 @@ pub async fn action_accept_new_task(
 }
 
 /// Trading items with a Tasks Master.
+/// https://api.artifactsmmo.com/docs/#/operations/action_task_trade_my__name__action_task_trade_post
 pub async fn action_task_trade(
     settings: Settings,
     name: ValidatedString,
@@ -430,6 +456,7 @@ pub async fn action_task_trade(
 }
 
 /// Cancel a task for 1 tasks coin.
+/// https://api.artifactsmmo.com/docs/#/operations/action_task_cancel_my__name__action_task_cancel_post
 pub async fn action_cancel_task(
     settings: Settings,
     name: ValidatedString,
@@ -440,6 +467,7 @@ pub async fn action_cancel_task(
 }
 
 /// Give gold to another character in your account on the same map.
+/// https://api.artifactsmmo.com/docs/#/operations/action_give_gold_my__name__action_give_gold_post
 pub async fn action_give_gold(
     settings: Settings,
     name: ValidatedString,
@@ -457,6 +485,7 @@ pub async fn action_give_gold(
 }
 
 /// Give items to another character in your account on the same map. The cooldown will be 3 seconds multiplied by the number of different items given.
+/// https://api.artifactsmmo.com/docs/#/operations/action_give_items_my__name__action_give_item_post
 pub async fn action_give_item(
     settings: Settings,
     name: ValidatedString,
@@ -486,6 +515,7 @@ pub async fn action_give_item(
 }
 
 /// Delete an item from your character's inventory.
+/// https://api.artifactsmmo.com/docs/#/operations/action_delete_item_my__name__action_delete_post
 pub async fn action_delete_item(
     settings: Settings,
     name: ValidatedString,
@@ -500,6 +530,7 @@ pub async fn action_delete_item(
 }
 
 /// Change the skin of your character.
+/// https://api.artifactsmmo.com/docs/#/operations/action_change_skin_my__name__action_change_skin_post
 pub async fn action_change_skin(
     settings: Settings,
     name: ValidatedString,

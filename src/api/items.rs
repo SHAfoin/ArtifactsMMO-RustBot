@@ -14,7 +14,7 @@ use crate::{
 };
 
 /// Fetch items details.
-async fn get_all_items(
+pub async fn get_all_items(
     settings: Settings,
     craft_material: Option<ValidatedString>,
     craft_skill: Option<Skill>,
@@ -73,7 +73,7 @@ async fn get_all_items(
 }
 
 /// Retrieve the details of a item.
-async fn get_item(settings: Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_item(settings: Settings, code: &str) -> Result<serde_json::Value> {
     let span = info_span!("get_item", code);
     let _enter = span.enter();
     get(settings, &format!("/items/{}", code), None).await

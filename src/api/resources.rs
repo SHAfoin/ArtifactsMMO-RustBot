@@ -13,7 +13,7 @@ use crate::{
 };
 
 /// Fetch resources details.
-async fn get_all_resources(
+pub async fn get_all_resources(
     settings: Settings,
     drop: Option<ValidatedString>,
     max_level: Option<usize>,
@@ -67,7 +67,7 @@ async fn get_all_resources(
 }
 
 /// Retrieve the details of a resource.
-async fn get_resource(settings: Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_resource(settings: Settings, code: &str) -> Result<serde_json::Value> {
     let span = info_span!("get_resource", code);
     let _enter = span.enter();
 

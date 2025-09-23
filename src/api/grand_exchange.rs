@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// Fetch all sell orders.
-async fn get_all_grandexchange_orders(
+pub async fn get_all_grandexchange_orders(
     settings: Settings,
     seller: Option<ValidatedString>,
     code: Option<ValidatedString>,
@@ -36,7 +36,7 @@ async fn get_all_grandexchange_orders(
 }
 
 /// Retrieve the sell order of a item.
-async fn get_grandexchange_order(
+pub async fn get_grandexchange_order(
     settings: Settings,
     id: ValidatedString,
 ) -> Result<serde_json::Value> {
@@ -47,7 +47,7 @@ async fn get_grandexchange_order(
 }
 
 // For a specific item only, print the last 7 days of sell history
-async fn get_grandexchange_sell_history(
+pub async fn get_grandexchange_sell_history(
     settings: Settings,
     code: ValidatedString,
     buyer: Option<ValidatedString>,

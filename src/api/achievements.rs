@@ -13,7 +13,7 @@ use crate::{
 };
 
 /// List of all achievements.
-async fn get_all_achievements(
+pub async fn get_all_achievements(
     settings: Settings,
     _type: Option<AchievementType>,
     pagination: Option<PaginationParams>,
@@ -35,7 +35,7 @@ async fn get_all_achievements(
 }
 
 /// Retrieve the details of a achievement.
-async fn get_achievement(settings: Settings, code: ValidatedString) -> Result<serde_json::Value> {
+pub async fn get_achievement(settings: Settings, code: ValidatedString) -> Result<serde_json::Value> {
     let span = info_span!("get_achievement", code = %code);
     let _enter = span.enter();
 

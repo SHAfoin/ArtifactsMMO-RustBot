@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// Retrieve the details of a character.
-async fn get_character(settings: Settings, name: ValidatedString) -> Result<serde_json::Value> {
+pub async fn get_character(settings: Settings, name: ValidatedString) -> Result<serde_json::Value> {
     let span = info_span!("get_character", name = %name);
     let _enter = span.enter();
 

@@ -13,7 +13,7 @@ use crate::{
 };
 
 /// Fetch maps details.
-async fn get_all_maps(
+pub async fn get_all_maps(
     settings: Settings,
     content_code: Option<ValidatedString>,
     content_type: Option<MapContentType>,
@@ -40,7 +40,7 @@ async fn get_all_maps(
 }
 
 /// Retrieve the details of a map.
-async fn get_map(settings: Settings, x: &str, y: &str) -> Result<serde_json::Value> {
+pub async fn get_map(settings: Settings, x: &str, y: &str) -> Result<serde_json::Value> {
     let span = info_span!("get_map", x, y);
     let _enter = span.enter();
 

@@ -9,21 +9,21 @@ use crate::{
 };
 
 /// Fetch account details.
-async fn get_account_details(settings: Settings) -> Result<serde_json::Value> {
+pub async fn get_account_details(settings: Settings) -> Result<serde_json::Value> {
     let span = info_span!("get_account_details");
     let _enter = span.enter();
     get(settings, "/my/details", None).await
 }
 
 /// Fetch bank details.
-async fn get_bank_details(settings: Settings) -> Result<serde_json::Value> {
+pub async fn get_bank_details(settings: Settings) -> Result<serde_json::Value> {
     let span = info_span!("get_bank_details");
     let _enter = span.enter();
     get(settings, "/my/bank", None).await
 }
 
 /// Fetch all items in your bank.
-async fn get_bank_items(
+pub async fn get_bank_items(
     settings: Settings,
     item_code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
@@ -45,7 +45,7 @@ async fn get_bank_items(
 }
 
 /// Fetch your sell orders details.
-async fn get_my_grandexchange_sell_orders(
+pub async fn get_my_grandexchange_sell_orders(
     settings: Settings,
     code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
@@ -67,7 +67,7 @@ async fn get_my_grandexchange_sell_orders(
 }
 
 /// Fetch your sales history of the last 7 days.
-async fn get_my_grandexchange_sell_history(
+pub async fn get_my_grandexchange_sell_history(
     settings: Settings,
     code: Option<ValidatedString>,
     id: Option<ValidatedString>,

@@ -13,7 +13,7 @@ use crate::{
 };
 
 /// Fetch leaderboard details.
-async fn get_characters_leaderboard(
+pub async fn get_characters_leaderboard(
     settings: Settings,
     name: Option<ValidatedStringWithSpaces>,
     sort: Option<Skill>,
@@ -40,7 +40,7 @@ async fn get_characters_leaderboard(
 }
 
 /// Fetch leaderboard details.
-async fn get_account_leaderboard(
+pub async fn get_account_leaderboard(
     settings: Settings,
     name: Option<ValidatedStringWithSpaces>,
     sort: Option<ScoreType>,

@@ -10,7 +10,7 @@ use crate::{
 };
 
 /// Fetch maps details.
-async fn get_all_monsters(
+pub async fn get_all_monsters(
     settings: Settings,
     drop: Option<ValidatedString>,
     max_level: Option<usize>,
@@ -53,7 +53,7 @@ async fn get_all_monsters(
 }
 
 /// Retrieve the details of a monster.
-async fn get_monster(settings: Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_monster(settings: Settings, code: &str) -> Result<serde_json::Value> {
     let span = info_span!("get_monster", code);
     let _enter = span.enter();
 

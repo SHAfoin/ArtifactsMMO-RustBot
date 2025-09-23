@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// List of all badges.
-async fn get_all_badges(
+pub async fn get_all_badges(
     settings: Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
@@ -24,7 +24,7 @@ async fn get_all_badges(
 }
 
 /// Retrieve the details of a badge.
-async fn get_badge(settings: Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_badge(settings: Settings, code: &str) -> Result<serde_json::Value> {
     let span = info_span!("get_badge", code = %code);
     let _enter = span.enter();
 

@@ -10,7 +10,7 @@ use crate::{
 };
 
 /// Fetch events details.
-async fn get_all_events(
+pub async fn get_all_events(
     settings: Settings,
     _type: Option<EventType>,
     pagination: Option<PaginationParams>,
@@ -29,7 +29,7 @@ async fn get_all_events(
 }
 
 /// Fetch active events details.
-async fn get_all_active_events(
+pub async fn get_all_active_events(
     settings: Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {

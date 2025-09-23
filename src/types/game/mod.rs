@@ -1,0 +1,10 @@
+pub mod achievement_type;
+pub mod equipment_slot;
+pub mod event_type;
+pub mod item_type;
+pub mod map_content_type;
+pub mod npc_type;
+pub mod score_type;
+pub mod skill;
+pub mod skin_type;
+pub mod task_type;

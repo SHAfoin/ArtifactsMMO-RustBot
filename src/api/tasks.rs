@@ -1,0 +1,89 @@
+use crate::api::utils::get;
+use crate::types::common::pagination_params::PaginationParams;
+use crate::types::common::settings::Settings;
+use crate::types::game::skill::Skill;
+use crate::types::game::task_type::TaskType;
+use anyhow::Result;
+use tracing::info_span;
+
+/// Fetch the list of all tasks.
+async fn get_all_tasks(
+    settings: Settings,
+    max_level: Option<usize>,
+    min_level: Option<usize>,
+    skill: Option<Skill>,
+    _type: Option<TaskType>,
+    pagination: Option<PaginationParams>,
+) -> Result<serde_json::Value> {
+    let span = info_span!("get_all_tasks", max_level = %max_level.map_or("".to_string(), |f| f.to_string()), min_level = %min_level.map_or("".to_string(), |f| f.to_string()), skill = %skill.as_ref().map_or("".to_string(), |s| s.to_string()), type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
+    let mut query_params = Vec::new();
+
+    if let Some(skill) = &skill {
+        if !skill.is_task_skill() {
+            panic!("skill must be a task skill");
+        }
+    }
+
+    if let (Some(min), Some(max)) = (min_level, max_level) {
+        if min > max {
+            panic!("min_level cannot be greater than max_level");
+        }
+    }
+
+    if let Some(max_level) = max_level {
+        query_params.push(("max_level", max_level.to_string()));
+    }
+
+    if let Some(min_level) = min_level {
+        query_params.push(("min_level", min_level.to_string()));
+    }
+
+    if let Some(skill) = skill {
+        query_params.push(("skill", skill.to_string()));
+    }
+
+    if let Some(_type) = _type {
+        query_params.push(("type", _type.to_string()));
+    }
+
+    if let Some(pagination) = &pagination {
+        query_params.extend(pagination.to_query_params());
+    }
+
+    get(settings, "/tasks/list", Some(query_params)).await
+}
+
+/// Retrieve the details of a task.
+async fn get_task(settings: Settings, code: &str) -> Result<serde_json::Value> {
+    let span = info_span!("get_task", code);
+    let _enter = span.enter();
+
+    get(settings, &format!("/tasks/list/{}", code), None).await
+}
+
+/// Retrieve the details of a tasks reward.
+async fn get_tasks_reward(settings: Settings, code: &str) -> Result<serde_json::Value> {
+    let span = info_span!("get_tasks_reward", code);
+    let _enter = span.enter();
+
+    get(settings, &format!("/tasks/rewards/{}", code), None).await
+}
+
+/// Fetch the list of all tasks rewards. To obtain these rewards, you must exchange 6 task coins with a tasks master.
+async fn get_all_tasks_rewards(
+    settings: Settings,
+    pagination: Option<PaginationParams>,
+) -> Result<serde_json::Value> {
+    let span = info_span!("get_all_tasks_rewards", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let _enter = span.enter();
+
+    let mut query_params = Vec::new();
+
+    if let Some(pagination) = &pagination {
+        query_params.extend(pagination.to_query_params());
+    }
+
+    get(settings, "/tasks/rewards", Some(query_params)).await
+}

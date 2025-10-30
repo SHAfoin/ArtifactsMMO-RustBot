@@ -3,7 +3,7 @@
 use anyhow::Result;
 
 use crate::{
-    api::{accounts::get_account_characters, characters::get_character, my_characters::*},
+    api::characters::get_character,
     types::{common::settings::Settings, game::character::Character},
 };
 
@@ -16,9 +16,12 @@ pub mod types;
 async fn main() -> Result<()> {
     let settings: Settings = config::app_configuration();
 
-    logging::init_logging();
+    // Keep the returned WorkerGuard alive for the lifetime of `main` so the
+    // non-blocking background logger has time to flush on shutdown. Dropping
+    // the guard will flush and stop the background worker.
+    let _guard = logging::init_logging();
 
-    match get_character(settings, "Baba".into()).await {
+    match get_character(settings, "Bobobobobobo".into()).await {
         Ok(m) => {
             println!("Character info: {}", serde_json::to_string_pretty(&m)?);
             let character: Character = serde_json::from_value(m["data"].clone())?;

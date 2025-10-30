@@ -3,7 +3,7 @@ pub mod character;
 pub mod equipment_slot;
 pub mod event_type;
 pub mod item_type;
-pub mod map_content_type;
+pub mod map;
 pub mod npc_type;
 pub mod score_type;
 pub mod skill;

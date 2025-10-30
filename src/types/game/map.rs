@@ -21,3 +21,19 @@ impl ToString for MapContentType {
         }
     }
 }
+
+pub enum MapLayerType {
+    Interior,
+    Overworld,
+    Underground,
+}
+
+impl ToString for MapLayerType {
+    fn to_string(&self) -> String {
+        match self {
+            MapLayerType::Interior => "interior".to_string(),
+            MapLayerType::Overworld => "overworld".to_string(),
+            MapLayerType::Underground => "underground".to_string(),
+        }
+    }
+}

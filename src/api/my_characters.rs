@@ -51,20 +51,50 @@ pub async fn get_my_characters(settings: Settings) -> Result<serde_json::Value> 
     get(settings, "/my/characters", None).await
 }
 
-/// Moves a character on the map using the map's X and Y position.
+/// Moves a character on the map using either the map's ID or X and Y position. Provide either 'map_id' or both 'x' and 'y' coordinates in the request body.
 /// https://api.artifactsmmo.com/docs/#/operations/action_move_my__name__action_move_post
 pub async fn action_move(
     settings: Settings,
     name: ValidatedString,
-    x: usize,
-    y: usize,
+    x: Option<usize>,
+    y: Option<usize>,
+    map_id: Option<usize>,
 ) -> Result<serde_json::Value> {
-    let json = format!(r#"{{"x": {}, "y": {}}}"#, x, y);
+    if map_id.is_some() && (x.is_some() || y.is_some()) {
+        return Err(anyhow::anyhow!(
+            "Provide either 'map_id' or both 'x' and 'y', but not both."
+        ));
+    }
 
-    let span = info_span!("action_move", x, y);
+    let mut json_body = serde_json::Map::new();
+
+    if let (Some(x), Some(y)) = (x, y) {
+        json_body.insert("x".to_string(), serde_json::json!(x));
+        json_body.insert("y".to_string(), serde_json::json!(y));
+    }
+
+    if let Some(map_id) = map_id {
+        json_body.insert("map_id".to_string(), serde_json::json!(map_id));
+    }
+
+    let json = serde_json::Value::Object(json_body).to_string();
+
+    let span = info_span!("action_move", x, y, map_id);
     let _enter = span.enter();
 
     post(settings, &format!("/my/{}/action/move", name), &json).await
+}
+
+/// Execute a transition from the current map to another layer. The character must be on a map that has a transition available.
+/// https://api.artifactsmmo.com/docs/#/operations/action_transition_my__name__action_transition_post
+pub async fn action_transition(
+    settings: Settings,
+    name: ValidatedString,
+) -> Result<serde_json::Value> {
+    let span = info_span!("action_transition");
+    let _enter = span.enter();
+
+    post(settings, &format!("/my/{}/action/transition", name), "").await
 }
 
 /// Recovers hit points by resting. (1 second per 5 HP, minimum 3 seconds)
@@ -145,12 +175,29 @@ pub async fn action_use_item(
     post(settings, &format!("/my/{}/action/use", name), &json).await
 }
 
-/// Start a fight against a monster on the character's map.
+/// Start a fight against a monster on the character's map. Add participants for multi-character fights (up to 3 characters, only for boss).
 /// https://api.artifactsmmo.com/docs/#/operations/action_fight_my__name__action_fight_post
-pub async fn action_fight(settings: Settings, name: ValidatedString) -> Result<serde_json::Value> {
-    let span = info_span!("action_fight");
+pub async fn action_fight(
+    settings: Settings,
+    name: ValidatedString,
+    participants: Option<Vec<ValidatedString>>,
+) -> Result<serde_json::Value> {
+    let span = info_span!("action_fight", participants = ?participants);
     let _enter = span.enter();
-    post(settings, &format!("/my/{}/action/fight", name), "").await
+
+    // Construct the JSON body
+    let participants_json = participants
+        .map(|p| {
+            p.into_iter()
+                .map(|s| format!("\"{}\"", s))
+                .collect::<Vec<String>>()
+                .join(",")
+        })
+        .unwrap_or_else(|| "".to_string());
+
+    let json = format!("{{\"participants\": [{}]}}", participants_json);
+
+    post(settings, &format!("/my/{}/action/fight", name), &json).await
 }
 
 /// Harvest a resource on the character's map.
@@ -381,7 +428,7 @@ pub async fn action_grandexchange_create_sell_order(
 
     post(
         settings,
-        &format!("/my/{}/action/grandexchange/sell", name),
+        &format!("/my/{}/action/grandexexchange/sell", name),
         &json,
     )
     .await

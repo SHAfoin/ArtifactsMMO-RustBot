@@ -15,7 +15,7 @@ use crate::{
 /// Retrieve the achievements of a account.
 /// https://api.artifactsmmo.com/docs/#/operations/get_account_achievements_accounts__account__achievements_get
 pub async fn get_account_achievements(
-    settings: Settings,
+    settings: &Settings,
     account: ValidatedString,
     completed: Option<bool>,
     _type: Option<AchievementType>,
@@ -49,7 +49,7 @@ pub async fn get_account_achievements(
 /// Fetch account character lists.
 /// https://api.artifactsmmo.com/docs/#/operations/get_account_characters_accounts__account__characters_get
 pub async fn get_account_characters(
-    settings: Settings,
+    settings: &Settings,
     account: ValidatedString,
 ) -> Result<serde_json::Value> {
     let span = info_span!("get_account_characters", account = %account);
@@ -60,7 +60,7 @@ pub async fn get_account_characters(
 /// Retrieve the details of a character.
 /// https://api.artifactsmmo.com/docs/#/operations/get_account_accounts__account__get
 pub async fn get_account(
-    settings: Settings,
+    settings: &Settings,
     account: ValidatedString,
 ) -> Result<serde_json::Value> {
     let span = info_span!("get_account", account = %account);

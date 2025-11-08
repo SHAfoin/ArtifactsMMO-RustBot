@@ -5,7 +5,7 @@ use tracing::{error, info};
 
 use crate::types::common::settings::Settings;
 
-pub async fn post(settings: Settings, path: &str, json: &str) -> Result<serde_json::Value> {
+pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_json::Value> {
     let url = format!("{}{}", settings.api_url, path);
 
     let client = reqwest::Client::new();
@@ -46,7 +46,7 @@ pub async fn post(settings: Settings, path: &str, json: &str) -> Result<serde_js
 }
 
 pub async fn get(
-    settings: Settings,
+    settings: &Settings,
     path: &str,
     query_params: Option<Vec<(&str, String)>>,
 ) -> Result<serde_json::Value> {

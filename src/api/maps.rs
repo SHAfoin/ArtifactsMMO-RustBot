@@ -15,7 +15,7 @@ use crate::{
 /// Fetch maps details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_maps_maps_get
 pub async fn get_all_maps(
-    settings: Settings,
+    settings: &Settings,
     content_code: Option<ValidatedString>,
     content_type: Option<MapContentType>,
     hide_blocked_maps: Option<bool>,
@@ -52,7 +52,7 @@ pub async fn get_all_maps(
 
 /// Fetch maps details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_layer_maps_maps__layer__get
-pub async fn get_layer_map(settings: Settings, layer: MapLayerType) -> Result<serde_json::Value> {
+pub async fn get_layer_map(settings: &Settings, layer: MapLayerType) -> Result<serde_json::Value> {
     let span = info_span!("get_layer_map", layer = %layer.to_string());
     let _enter = span.enter();
 
@@ -62,7 +62,7 @@ pub async fn get_layer_map(settings: Settings, layer: MapLayerType) -> Result<se
 /// Retrieve the details of a map by layer and coordinates.
 /// https://api.artifactsmmo.com/docs/#/operations/get_map_by_position_maps__layer___x___y__get
 pub async fn get_map_by_position(
-    settings: Settings,
+    settings: &Settings,
     x: isize,
     y: isize,
     layer: MapLayerType,
@@ -71,7 +71,7 @@ pub async fn get_map_by_position(
     let _enter = span.enter();
 
     get(
-        settings,
+        &settings,
         &format!("/maps/{}/{}/{}", layer.to_string(), x, y),
         None,
     )
@@ -80,7 +80,7 @@ pub async fn get_map_by_position(
 
 /// Retrieve the details of a map by its unique ID.
 /// https://api.artifactsmmo.com/docs/#/operations/get_map_by_id_maps_id__map_id__get
-pub async fn get_map_by_id(settings: Settings, map_id: usize) -> Result<serde_json::Value> {
+pub async fn get_map_by_id(settings: &Settings, map_id: usize) -> Result<serde_json::Value> {
     let span = info_span!("get_map_by_id", map_id);
     let _enter = span.enter();
 

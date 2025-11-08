@@ -9,7 +9,7 @@ use crate::{
 /// List of all effects. Effects are used by equipment, tools, runes, consumables and monsters. An effect is an action that produces an effect on the game.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_effects_effects_get
 pub async fn get_all_effects(
-    settings: Settings,
+    settings: &Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
     let span = info_span!("get_all_effects", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
@@ -24,7 +24,7 @@ pub async fn get_all_effects(
 
 /// Retrieve the details of a badge.
 /// https://api.artifactsmmo.com/docs/#/operations/get_effect_effects__code__get
-pub async fn get_effect(settings: Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_effect(settings: &Settings, code: &str) -> Result<serde_json::Value> {
     let span = info_span!("get_effect", code = %code);
     let _enter = span.enter();
 

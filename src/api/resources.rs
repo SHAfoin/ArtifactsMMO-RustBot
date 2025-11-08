@@ -15,7 +15,7 @@ use crate::{
 /// Fetch resources details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_resources_resources_get
 pub async fn get_all_resources(
-    settings: Settings,
+    settings: &Settings,
     drop: Option<ValidatedString>,
     max_level: Option<usize>,
     min_level: Option<usize>,
@@ -69,7 +69,7 @@ pub async fn get_all_resources(
 
 /// Retrieve the details of a resource.
 /// https://api.artifactsmmo.com/docs/#/operations/get_resource_resources__code__get
-pub async fn get_resource(settings: Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_resource(settings: &Settings, code: &str) -> Result<serde_json::Value> {
     let span = info_span!("get_resource", code);
     let _enter = span.enter();
 

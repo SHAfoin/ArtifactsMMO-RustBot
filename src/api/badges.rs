@@ -9,7 +9,7 @@ use crate::{
 /// List of all badges.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_badges_badges_get
 pub async fn get_all_badges(
-    settings: Settings,
+    settings: &Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
     let span = info_span!("get_all_badges", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
@@ -26,7 +26,7 @@ pub async fn get_all_badges(
 
 /// Retrieve the details of a badge.
 /// https://api.artifactsmmo.com/docs/#/operations/get_badge_badges__code__get
-pub async fn get_badge(settings: Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_badge(settings: &Settings, code: &str) -> Result<serde_json::Value> {
     let span = info_span!("get_badge", code = %code);
     let _enter = span.enter();
 

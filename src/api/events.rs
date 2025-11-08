@@ -12,7 +12,7 @@ use crate::{
 /// Fetch events details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_active_events_events_active_get
 pub async fn get_all_events(
-    settings: Settings,
+    settings: &Settings,
     _type: Option<EventType>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
@@ -32,7 +32,7 @@ pub async fn get_all_events(
 /// Fetch active events details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_events_events_get
 pub async fn get_all_active_events(
-    settings: Settings,
+    settings: &Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
     let span = info_span!("get_all_active_events", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));

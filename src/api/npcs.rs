@@ -16,7 +16,7 @@ use crate::{
 /// Fetch NPCs details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_npcs_npcs_details_get
 pub async fn get_all_npcs(
-    settings: Settings,
+    settings: &Settings,
     name: Option<ValidatedStringWithSpaces>,
     _type: Option<NPCType>,
     pagination: Option<PaginationParams>,
@@ -44,7 +44,7 @@ pub async fn get_all_npcs(
 /// Retrieve the details of a NPC.
 /// https://api.artifactsmmo.com/docs/#/operations/get_npc_npcs_details__code__get
 pub async fn get_npc(
-    settings: Settings,
+    settings: &Settings,
     code: Option<ValidatedString>,
 ) -> Result<serde_json::Value> {
     let span = info_span!("get_npc", code = %code.as_ref().unwrap_or(&ValidatedString::default()));
@@ -61,7 +61,7 @@ pub async fn get_npc(
 /// Retrieve the items list of a NPC. If the NPC has items to buy, sell or trade, they will be displayed.
 /// https://api.artifactsmmo.com/docs/#/operations/get_npc_items_npcs_items__code__get
 pub async fn get_npc_items(
-    settings: Settings,
+    settings: &Settings,
     code: &str,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
@@ -83,7 +83,7 @@ pub async fn get_npc_items(
 /// Retrieve the list of all NPC items.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_npcs_items_npcs_items_get
 pub async fn get_all_npcs_items(
-    settings: Settings,
+    settings: &Settings,
     code: Option<ValidatedString>,
     currency: Option<ValidatedString>,
     npc: Option<ValidatedString>,

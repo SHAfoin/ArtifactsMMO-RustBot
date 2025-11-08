@@ -12,7 +12,7 @@ use crate::{
 /// Fetch maps details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_monsters_monsters_get
 pub async fn get_all_monsters(
-    settings: Settings,
+    settings: &Settings,
     drop: Option<ValidatedString>,
     max_level: Option<usize>,
     min_level: Option<usize>,
@@ -55,7 +55,7 @@ pub async fn get_all_monsters(
 
 /// Retrieve the details of a monster.
 /// https://api.artifactsmmo.com/docs/#/operations/get_monster_monsters__code__get
-pub async fn get_monster(settings: Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_monster(settings: &Settings, code: &str) -> Result<serde_json::Value> {
     let span = info_span!("get_monster", code);
     let _enter = span.enter();
 

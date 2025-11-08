@@ -63,8 +63,8 @@ pub async fn get_layer_map(settings: Settings, layer: MapLayerType) -> Result<se
 /// https://api.artifactsmmo.com/docs/#/operations/get_map_by_position_maps__layer___x___y__get
 pub async fn get_map_by_position(
     settings: Settings,
-    x: usize,
-    y: usize,
+    x: isize,
+    y: isize,
     layer: MapLayerType,
 ) -> Result<serde_json::Value> {
     let span = info_span!("get_map", x, y);

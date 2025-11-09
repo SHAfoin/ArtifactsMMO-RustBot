@@ -41,7 +41,7 @@ pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_j
                 .as_str()
                 .unwrap_or_default()
         );
-        Err(anyhow!(status.as_u16() as usize))
+        Err(anyhow!(status.as_u16() as i64))
     }
 }
 
@@ -85,6 +85,6 @@ pub async fn get(
                 .unwrap_or_default()
         );
 
-        Err(anyhow!(status.as_u16() as usize))
+        Err(anyhow!(status.as_u16() as i64))
     }
 }

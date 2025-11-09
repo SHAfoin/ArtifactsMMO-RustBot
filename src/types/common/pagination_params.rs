@@ -2,12 +2,12 @@ use core::fmt;
 
 #[derive(Debug, Clone)]
 pub struct PaginationParams {
-    page: usize,
-    size: usize,
+    page: i64,
+    size: i64,
 }
 
 impl PaginationParams {
-    pub fn new(page: usize, size: usize) -> Result<Self, String> {
+    pub fn new(page: i64, size: i64) -> Result<Self, String> {
         if page < 1 {
             return Err("Page must be >= 1".to_string());
         }

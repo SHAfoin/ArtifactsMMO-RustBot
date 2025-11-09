@@ -16,13 +16,13 @@ use crate::{
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_maps_maps_get
 pub async fn get_all_maps(
     settings: &Settings,
-    content_code: Option<ValidatedString>,
+    content_code: Option<&ValidatedString>,
     content_type: Option<MapContentType>,
     hide_blocked_maps: Option<bool>,
     layer: Option<MapLayerType>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_all_maps", content_code = %content_code.as_ref().unwrap_or(&ValidatedString::default()), content_type = %content_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!("get_all_maps", content_code = %content_code.as_deref().unwrap_or(&ValidatedString::default()), content_type = %content_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -63,8 +63,8 @@ pub async fn get_layer_map(settings: &Settings, layer: MapLayerType) -> Result<s
 /// https://api.artifactsmmo.com/docs/#/operations/get_map_by_position_maps__layer___x___y__get
 pub async fn get_map_by_position(
     settings: &Settings,
-    x: isize,
-    y: isize,
+    x: i64,
+    y: i64,
     layer: MapLayerType,
 ) -> Result<serde_json::Value> {
     let span = info_span!("get_map", x, y);
@@ -80,7 +80,7 @@ pub async fn get_map_by_position(
 
 /// Retrieve the details of a map by its unique ID.
 /// https://api.artifactsmmo.com/docs/#/operations/get_map_by_id_maps_id__map_id__get
-pub async fn get_map_by_id(settings: &Settings, map_id: usize) -> Result<serde_json::Value> {
+pub async fn get_map_by_id(settings: &Settings, map_id: i64) -> Result<serde_json::Value> {
     let span = info_span!("get_map_by_id", map_id);
     let _enter = span.enter();
 

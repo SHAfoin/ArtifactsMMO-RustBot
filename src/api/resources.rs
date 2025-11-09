@@ -17,8 +17,8 @@ use crate::{
 pub async fn get_all_resources(
     settings: &Settings,
     drop: Option<ValidatedString>,
-    max_level: Option<usize>,
-    min_level: Option<usize>,
+    max_level: Option<i64>,
+    min_level: Option<i64>,
     skill: Option<Skill>,
     name: Option<ValidatedString>,
     pagination: Option<PaginationParams>,

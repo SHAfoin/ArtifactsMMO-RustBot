@@ -55,10 +55,10 @@ pub async fn get_my_characters(settings: &Settings) -> Result<serde_json::Value>
 /// https://api.artifactsmmo.com/docs/#/operations/action_move_my__name__action_move_post
 pub async fn action_move(
     settings: &Settings,
-    name: ValidatedString,
-    x: Option<usize>,
-    y: Option<usize>,
-    map_id: Option<usize>,
+    name: &ValidatedString,
+    x: Option<i64>,
+    y: Option<i64>,
+    map_id: Option<i64>,
 ) -> Result<serde_json::Value> {
     if map_id.is_some() && (x.is_some() || y.is_some()) {
         return Err(anyhow::anyhow!(
@@ -113,7 +113,7 @@ pub async fn action_equip_item(
     name: ValidatedString,
     code: ValidatedString,
     slot: EquipmentSlot,
-    quantity: Option<usize>,
+    quantity: Option<i64>,
 ) -> Result<serde_json::Value> {
     if slot == EquipmentSlot::Utility1 || slot == EquipmentSlot::Utility2 {
         if let Some(q) = quantity {
@@ -140,7 +140,7 @@ pub async fn action_unequip_item(
     settings: &Settings,
     name: ValidatedString,
     slot: EquipmentSlot,
-    quantity: Option<usize>,
+    quantity: Option<i64>,
 ) -> Result<serde_json::Value> {
     if slot == EquipmentSlot::Utility1 || slot == EquipmentSlot::Utility2 {
         if let Some(q) = quantity {
@@ -166,7 +166,7 @@ pub async fn action_use_item(
     settings: &Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: usize,
+    quantity: i64,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_use_item", code = %code, quantity);
     let _enter = span.enter();
@@ -204,7 +204,7 @@ pub async fn action_fight(
 /// https://api.artifactsmmo.com/docs/#/operations/action_gathering_my__name__action_gathering_post
 pub async fn action_gathering(
     settings: &Settings,
-    name: ValidatedString,
+    name: &ValidatedString,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_gathering");
     let _enter = span.enter();
@@ -217,7 +217,7 @@ pub async fn action_crafting(
     settings: &Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: Option<usize>,
+    quantity: Option<i64>,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_crafting", code = %code, quantity = quantity.unwrap_or(1));
     let _enter = span.enter();
@@ -235,7 +235,7 @@ pub async fn action_crafting(
 pub async fn action_deposit_bank_gold(
     settings: &Settings,
     name: ValidatedString,
-    quantity: usize,
+    quantity: i64,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_deposit_bank_gold", quantity);
     let _enter = span.enter();
@@ -254,7 +254,7 @@ pub async fn action_deposit_bank_gold(
 pub async fn action_deposit_bank_item(
     settings: &Settings,
     name: ValidatedString,
-    items: Vec<(ValidatedString, usize)>,
+    items: Vec<(ValidatedString, i64)>,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_deposit_bank_item", items = ?items);
     let _enter = span.enter();
@@ -279,7 +279,7 @@ pub async fn action_deposit_bank_item(
 pub async fn action_withdraw_bank_item(
     settings: &Settings,
     name: ValidatedString,
-    items: Vec<(ValidatedString, usize)>,
+    items: Vec<(ValidatedString, i64)>,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_withdraw_bank_item", items = ?items);
     let _enter = span.enter();
@@ -304,7 +304,7 @@ pub async fn action_withdraw_bank_item(
 pub async fn action_withdraw_bank_gold(
     settings: &Settings,
     name: ValidatedString,
-    quantity: usize,
+    quantity: i64,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_withdraw_bank_gold", quantity);
     let _enter = span.enter();
@@ -341,7 +341,7 @@ pub async fn action_npc_buy_item(
     settings: &Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: usize,
+    quantity: i64,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_npc_buy_item", code = %code, quantity);
     let _enter = span.enter();
@@ -356,7 +356,7 @@ pub async fn action_npc_sell_item(
     settings: &Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: usize,
+    quantity: i64,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_npc_sell_item", code = %code, quantity);
     let _enter = span.enter();
@@ -371,7 +371,7 @@ pub async fn action_recycling(
     settings: &Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: Option<usize>,
+    quantity: Option<i64>,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_recycling", code = %code, quantity = quantity.unwrap_or(1));
     let _enter = span.enter();
@@ -390,7 +390,7 @@ pub async fn action_grandexchange_buy_item(
     settings: &Settings,
     name: ValidatedString,
     id: String,
-    quantity: usize,
+    quantity: i64,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_grandexchange_buy_item", id = %id, quantity);
     let _enter = span.enter();
@@ -410,8 +410,8 @@ pub async fn action_grandexchange_create_sell_order(
     settings: &Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: usize,
-    price: usize,
+    quantity: i64,
+    price: i64,
 ) -> Result<serde_json::Value> {
     let span = info_span!(
         "action_grandexchange_create_sell_order",
@@ -493,7 +493,7 @@ pub async fn action_task_trade(
     settings: &Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: usize,
+    quantity: i64,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_task_trade", code = %code, quantity);
     let _enter = span.enter();
@@ -518,7 +518,7 @@ pub async fn action_cancel_task(
 pub async fn action_give_gold(
     settings: &Settings,
     name: ValidatedString,
-    quantity: usize,
+    quantity: i64,
     character: ValidatedString,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_give_gold", quantity, character = %character);
@@ -536,7 +536,7 @@ pub async fn action_give_gold(
 pub async fn action_give_item(
     settings: &Settings,
     name: ValidatedString,
-    items: Vec<(ValidatedString, usize)>,
+    items: Vec<(ValidatedString, i64)>,
     character: ValidatedString,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_give_item", items = ?items, character = %character);
@@ -567,7 +567,7 @@ pub async fn action_delete_item(
     settings: &Settings,
     name: ValidatedString,
     code: ValidatedString,
-    quantity: usize,
+    quantity: i64,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_delete_item", code = %code, quantity);
     let _enter = span.enter();

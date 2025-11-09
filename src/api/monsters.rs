@@ -14,8 +14,8 @@ use crate::{
 pub async fn get_all_monsters(
     settings: &Settings,
     drop: Option<ValidatedString>,
-    max_level: Option<usize>,
-    min_level: Option<usize>,
+    max_level: Option<i64>,
+    min_level: Option<i64>,
     name: Option<ValidatedStringWithSpaces>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {

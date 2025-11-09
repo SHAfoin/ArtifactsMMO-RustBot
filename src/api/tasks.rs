@@ -10,8 +10,8 @@ use tracing::info_span;
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_tasks_tasks_list_get
 pub async fn get_all_tasks(
     settings: &Settings,
-    max_level: Option<usize>,
-    min_level: Option<usize>,
+    max_level: Option<i64>,
+    min_level: Option<i64>,
     skill: Option<Skill>,
     _type: Option<TaskType>,
     pagination: Option<PaginationParams>,

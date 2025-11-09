@@ -1,8 +1,9 @@
 use core::fmt;
 
 use regex::Regex;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ValidatedString(String);
 
 impl ValidatedString {

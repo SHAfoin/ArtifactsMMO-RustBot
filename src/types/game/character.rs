@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::types::game::skin_type::SkinType;
+use crate::types::{common::validated_string::ValidatedString, game::skin_type::SkinType};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct InventoryItem {
@@ -12,8 +12,8 @@ pub struct InventoryItem {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Character {
-    pub name: String,
-    pub account: String,
+    pub name: ValidatedString,
+    pub account: ValidatedString,
     pub skin: SkinType,
     pub level: u64,
     pub xp: u64,
@@ -81,32 +81,50 @@ pub struct Character {
 
     pub cooldown: u64,
     pub cooldown_expiration: Option<DateTime<Utc>>,
-    pub weapon_slot: String,
-    pub rune_slot: String,
-    pub shield_slot: String,
-    pub helmet_slot: String,
-    pub body_armor_slot: String,
-    pub leg_armor_slot: String,
-    pub boots_slot: String,
-    pub ring1_slot: String,
-    pub ring2_slot: String,
-    pub amulet_slot: String,
-    pub artifact1_slot: String,
-    pub artifact2_slot: String,
-    pub artifact3_slot: String,
+    pub weapon_slot: ValidatedString,
+    pub rune_slot: ValidatedString,
+    pub shield_slot: ValidatedString,
+    pub helmet_slot: ValidatedString,
+    pub body_armor_slot: ValidatedString,
+    pub leg_armor_slot: ValidatedString,
+    pub boots_slot: ValidatedString,
+    pub ring1_slot: ValidatedString,
+    pub ring2_slot: ValidatedString,
+    pub amulet_slot: ValidatedString,
+    pub artifact1_slot: ValidatedString,
+    pub artifact2_slot: ValidatedString,
+    pub artifact3_slot: ValidatedString,
 
-    pub utility1_slot: String,
+    pub utility1_slot: ValidatedString,
     pub utility1_slot_quantity: u64,
-    pub utility2_slot: String,
+    pub utility2_slot: ValidatedString,
     pub utility2_slot_quantity: u64,
 
-    pub bag_slot: String,
+    pub bag_slot: ValidatedString,
 
-    pub task: String,
-    pub task_type: String,
+    pub task: ValidatedString,
+    pub task_type: ValidatedString,
     pub task_progress: u64,
     pub task_total: u64,
 
     pub inventory_max_items: u64,
     pub inventory: Vec<InventoryItem>,
+}
+
+impl Character {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn from_json(json: &serde_json::Value) -> Self {
+        serde_json::from_value(json.clone()).unwrap_or_default()
+    }
+
+    pub fn is_on_cooldown(&self) -> bool {
+        if let Some(expiration) = self.cooldown_expiration {
+            Utc::now() < expiration
+        } else {
+            false
+        }
+    }
 }

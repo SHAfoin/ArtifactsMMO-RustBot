@@ -1,7 +1,13 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::types::{common::validated_string::ValidatedString, game::skin_type::SkinType};
+use crate::{
+    api::characters::get_character,
+    types::{
+        common::{settings::Settings, validated_string::ValidatedString},
+        game::{character, skin_type::SkinType},
+    },
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct InventoryItem {
@@ -116,8 +122,29 @@ impl Character {
         Self::default()
     }
 
+    pub async fn fetch_character(settings: &Settings, character_name: &ValidatedString) -> Self {
+        match get_character(&settings, character_name).await {
+            Ok(m) => {
+                return Character::from_json(&m["data"]);
+            }
+            Err(e) => {
+                println!("Error fetching character: {}", e);
+                return Character::new();
+            }
+        }
+    }
+
     pub fn from_json(json: &serde_json::Value) -> Self {
         serde_json::from_value(json.clone()).unwrap_or_default()
+    }
+
+    pub fn update_from_response(
+        &mut self,
+        json: &serde_json::Value,
+    ) -> Result<(), serde_json::Error> {
+        let updated_character: Character = serde_json::from_value(json.clone())?;
+        *self = updated_character;
+        Ok(())
     }
 
     pub fn is_on_cooldown(&self) -> bool {

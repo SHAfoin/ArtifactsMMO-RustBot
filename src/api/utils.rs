@@ -3,7 +3,34 @@ use reqwest::header::HeaderValue;
 use secrecy::ExposeSecret;
 use tracing::{error, info};
 
-use crate::types::common::settings::Settings;
+use crate::types::{common::settings::Settings, game::character::Character};
+
+pub async fn post_action(
+    settings: &Settings,
+    character: &mut Character,
+    path: &str,
+    json: &str,
+) -> Result<serde_json::Value> {
+    if (character.is_on_cooldown()) {
+        let time_to_wait = character.cooldown_expiration.unwrap() - chrono::Utc::now();
+        println!(
+            "Character is on cooldown. Waiting for {} seconds...",
+            time_to_wait.num_seconds()
+        );
+        tokio::time::sleep(tokio::time::Duration::from_millis(
+            time_to_wait.num_milliseconds() as u64,
+        ))
+        .await;
+    }
+
+    match post(settings, path, json).await {
+        Ok(m) => {
+            character.update_from_response(&m["data"]["character"])?;
+            Ok(m)
+        }
+        Err(e) => Err(e),
+    }
+}
 
 pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_json::Value> {
     let url = format!("{}{}", settings.api_url, path);

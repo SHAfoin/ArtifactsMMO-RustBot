@@ -16,7 +16,7 @@ use anyhow::Result;
 pub async fn collect_ressource(
     settings: &Settings,
     ressource_code: &ValidatedString,
-    character: &Character,
+    character: &mut Character,
 ) -> Result<serde_json::Value> {
     match get_all_maps(
         &settings,
@@ -33,10 +33,10 @@ pub async fn collect_ressource(
             let y = m["data"][0]["y"].as_i64().unwrap();
             println!("Maps found at x:{} y:{}", x, y);
 
-            match action_move(&settings, &character.name, Some(x), Some(y), None).await {
+            match action_move(&settings, character, Some(x), Some(y), None).await {
                 Ok(m) => {
                     println!("{}", m);
-                    match action_gathering(&settings, &character.name).await {
+                    match action_gathering(&settings, character).await {
                         Ok(m) => {
                             println!("{}", m);
                             return Ok(m);
@@ -49,7 +49,7 @@ pub async fn collect_ressource(
                 }
                 Err(e) if e.to_string().contains("490") => {
                     println!("Already at location");
-                    match action_gathering(&settings, &character.name).await {
+                    match action_gathering(&settings, character).await {
                         Ok(m) => {
                             println!("{}", m);
                             return Ok(m);

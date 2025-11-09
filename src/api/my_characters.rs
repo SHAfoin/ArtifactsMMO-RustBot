@@ -2,13 +2,13 @@ use anyhow::Result;
 use tracing::info_span;
 
 use crate::{
-    api::utils::{get, post},
+    api::utils::{get, post_action},
     types::{
         common::{
             pagination_params::PaginationParams, settings::Settings,
             validated_string::ValidatedString,
         },
-        game::{equipment_slot::EquipmentSlot, skin_type::SkinType},
+        game::{character::Character, equipment_slot::EquipmentSlot, skin_type::SkinType},
     },
 };
 
@@ -34,12 +34,12 @@ pub async fn get_all_characters_logs(
 /// https://api.artifactsmmo.com/docs/#/operations/get_character_logs_my_logs__name__get
 pub async fn get_character_logs(
     settings: &Settings,
-    character: ValidatedString,
+    character_name: ValidatedString,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_characters_logs", character = %character);
+    let span = info_span!("get_characters_logs", character = %character_name);
     let _enter = span.enter();
 
-    get(settings, &format!("/my/logs/{}", character), None).await
+    get(settings, &format!("/my/logs/{}", character_name), None).await
 }
 
 /// List of your characters.
@@ -55,7 +55,7 @@ pub async fn get_my_characters(settings: &Settings) -> Result<serde_json::Value>
 /// https://api.artifactsmmo.com/docs/#/operations/action_move_my__name__action_move_post
 pub async fn action_move(
     settings: &Settings,
-    name: &ValidatedString,
+    character: &mut Character,
     x: Option<i64>,
     y: Option<i64>,
     map_id: Option<i64>,
@@ -82,35 +82,56 @@ pub async fn action_move(
     let span = info_span!("action_move", x, y, map_id);
     let _enter = span.enter();
 
-    post(settings, &format!("/my/{}/action/move", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/move", character.name),
+        &json,
+    )
+    .await
 }
 
 /// Execute a transition from the current map to another layer. The character must be on a map that has a transition available.
 /// https://api.artifactsmmo.com/docs/#/operations/action_transition_my__name__action_transition_post
 pub async fn action_transition(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_transition");
     let _enter = span.enter();
 
-    post(settings, &format!("/my/{}/action/transition", name), "").await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/transition", character.name),
+        "",
+    )
+    .await
 }
 
 /// Recovers hit points by resting. (1 second per 5 HP, minimum 3 seconds)
 /// https://api.artifactsmmo.com/docs/#/operations/action_rest_my__name__action_rest_post
-pub async fn action_rest(settings: &Settings, name: ValidatedString) -> Result<serde_json::Value> {
+pub async fn action_rest(
+    settings: &Settings,
+    character: &mut Character,
+) -> Result<serde_json::Value> {
     let span = info_span!("action_rest");
     let _enter = span.enter();
 
-    post(settings, &format!("/my/{}/action/rest", name), "").await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/rest", character.name),
+        "",
+    )
+    .await
 }
 
 /// Equip an item on your character.
 /// https://api.artifactsmmo.com/docs/#/operations/action_equip_item_my__name__action_equip_post
 pub async fn action_equip_item(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     code: ValidatedString,
     slot: EquipmentSlot,
     quantity: Option<i64>,
@@ -131,14 +152,20 @@ pub async fn action_equip_item(
         slot,
         quantity.unwrap_or(1)
     );
-    post(settings, &format!("/my/{}/action/equip", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/equip", character.name),
+        &json,
+    )
+    .await
 }
 
 /// Unequip an item on your character.
 /// https://api.artifactsmmo.com/docs/#/operations/action_unequip_item_my__name__action_unequip_post
 pub async fn action_unequip_item(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     slot: EquipmentSlot,
     quantity: Option<i64>,
 ) -> Result<serde_json::Value> {
@@ -157,14 +184,20 @@ pub async fn action_unequip_item(
         slot,
         quantity.unwrap_or(1)
     );
-    post(settings, &format!("/my/{}/action/unequip", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/unequip", character.name),
+        &json,
+    )
+    .await
 }
 
 /// Use an item as a consumable.
 /// https://api.artifactsmmo.com/docs/#/operations/action_use_item_my__name__action_use_post
 pub async fn action_use_item(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     code: ValidatedString,
     quantity: i64,
 ) -> Result<serde_json::Value> {
@@ -172,14 +205,20 @@ pub async fn action_use_item(
     let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
-    post(settings, &format!("/my/{}/action/use", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/use", character.name),
+        &json,
+    )
+    .await
 }
 
 /// Start a fight against a monster on the character's map. Add participants for multi-character fights (up to 3 characters, only for boss).
 /// https://api.artifactsmmo.com/docs/#/operations/action_fight_my__name__action_fight_post
 pub async fn action_fight(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     participants: Option<Vec<ValidatedString>>,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_fight", participants = ?participants);
@@ -197,25 +236,37 @@ pub async fn action_fight(
 
     let json = format!("{{\"participants\": [{}]}}", participants_json);
 
-    post(settings, &format!("/my/{}/action/fight", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/fight", character.name),
+        &json,
+    )
+    .await
 }
 
 /// Harvest a resource on the character's map.
 /// https://api.artifactsmmo.com/docs/#/operations/action_gathering_my__name__action_gathering_post
 pub async fn action_gathering(
     settings: &Settings,
-    name: &ValidatedString,
+    character: &mut Character,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_gathering");
     let _enter = span.enter();
-    post(settings, &format!("/my/{}/action/gathering", name), "").await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/gathering", character.name),
+        "",
+    )
+    .await
 }
 
 /// Crafting an item. The character must be on a map with a workshop.
 /// https://api.artifactsmmo.com/docs/#/operations/action_crafting_my__name__action_crafting_post
 pub async fn action_crafting(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     code: ValidatedString,
     quantity: Option<i64>,
 ) -> Result<serde_json::Value> {
@@ -227,23 +278,30 @@ pub async fn action_crafting(
         code,
         quantity.unwrap_or(1)
     );
-    post(settings, &format!("/my/{}/action/crafting", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/crafting", character.name),
+        &json,
+    )
+    .await
 }
 
 /// Deposit gold in a bank on the character's map.
 /// https://api.artifactsmmo.com/docs/#/operations/action_deposit_bank_gold_my__name__action_bank_deposit_gold_post
 pub async fn action_deposit_bank_gold(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     quantity: i64,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_deposit_bank_gold", quantity);
     let _enter = span.enter();
 
     let json = format!(r#"{{"quantity": {}}}"#, quantity);
-    post(
+    post_action(
         settings,
-        &format!("/my/{}/action/bank/deposit/gold", name),
+        character,
+        &format!("/my/{}/action/bank/deposit/gold", character.name),
         &json,
     )
     .await
@@ -253,7 +311,7 @@ pub async fn action_deposit_bank_gold(
 /// https://api.artifactsmmo.com/docs/#/operations/action_deposit_bank_item_my__name__action_bank_deposit_item_post
 pub async fn action_deposit_bank_item(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     items: Vec<(ValidatedString, i64)>,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_deposit_bank_item", items = ?items);
@@ -266,9 +324,10 @@ pub async fn action_deposit_bank_item(
 
     let json_string = format!("[{}]", items_json.join(","));
 
-    post(
+    post_action(
         settings,
-        &format!("/my/{}/action/bank/deposit/item", name),
+        character,
+        &format!("/my/{}/action/bank/deposit/item", character.name),
         &json_string,
     )
     .await
@@ -278,7 +337,7 @@ pub async fn action_deposit_bank_item(
 /// https://api.artifactsmmo.com/docs/#/operations/action_withdraw_bank_item_my__name__action_bank_withdraw_item_post
 pub async fn action_withdraw_bank_item(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     items: Vec<(ValidatedString, i64)>,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_withdraw_bank_item", items = ?items);
@@ -291,9 +350,10 @@ pub async fn action_withdraw_bank_item(
 
     let json_string = format!("[{}]", items_json.join(","));
 
-    post(
+    post_action(
         settings,
-        &format!("/my/{}/action/bank/withdraw/item", name),
+        character,
+        &format!("/my/{}/action/bank/withdraw/item", character.name),
         &json_string,
     )
     .await
@@ -303,16 +363,17 @@ pub async fn action_withdraw_bank_item(
 /// https://api.artifactsmmo.com/docs/#/operations/action_withdraw_bank_gold_my__name__action_bank_withdraw_gold_post
 pub async fn action_withdraw_bank_gold(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     quantity: i64,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_withdraw_bank_gold", quantity);
     let _enter = span.enter();
 
     let json = format!(r#"{{"quantity": {}}}"#, quantity);
-    post(
+    post_action(
         settings,
-        &format!("/my/{}/action/bank/withdraw/gold", name),
+        character,
+        &format!("/my/{}/action/bank/withdraw/gold", character.name),
         &json,
     )
     .await
@@ -322,14 +383,15 @@ pub async fn action_withdraw_bank_gold(
 /// https://api.artifactsmmo.com/docs/#/operations/action_buy_bank_expansion_my__name__action_bank_buy_expansion_post
 pub async fn action_buy_bank_expansion(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_buy_bank_expansion");
     let _enter = span.enter();
 
-    post(
+    post_action(
         settings,
-        &format!("/my/{}/action/bank/buy_expansion", name),
+        character,
+        &format!("/my/{}/action/bank/buy_expansion", character.name),
         "",
     )
     .await
@@ -339,7 +401,7 @@ pub async fn action_buy_bank_expansion(
 /// https://api.artifactsmmo.com/docs/#/operations/action_npc_buy_item_my__name__action_npc_buy_post
 pub async fn action_npc_buy_item(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     code: ValidatedString,
     quantity: i64,
 ) -> Result<serde_json::Value> {
@@ -347,14 +409,20 @@ pub async fn action_npc_buy_item(
     let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
-    post(settings, &format!("/my/{}/action/npc/buy", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/npc/buy", character.name),
+        &json,
+    )
+    .await
 }
 
 /// Sell an item to an NPC on the character's map.
 /// https://api.artifactsmmo.com/docs/#/operations/action_npc_sell_item_my__name__action_npc_sell_post
 pub async fn action_npc_sell_item(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     code: ValidatedString,
     quantity: i64,
 ) -> Result<serde_json::Value> {
@@ -362,14 +430,20 @@ pub async fn action_npc_sell_item(
     let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
-    post(settings, &format!("/my/{}/action/npc/sell", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/npc/sell", character.name),
+        &json,
+    )
+    .await
 }
 
 /// Recycling an item. The character must be on a map with a workshop (only for equipments and weapons).
 /// https://api.artifactsmmo.com/docs/#/operations/action_recycling_my__name__action_recycling_post
 pub async fn action_recycling(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     code: ValidatedString,
     quantity: Option<i64>,
 ) -> Result<serde_json::Value> {
@@ -381,14 +455,20 @@ pub async fn action_recycling(
         code,
         quantity.unwrap_or(1)
     );
-    post(settings, &format!("/my/{}/action/recycling", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/recycling", character.name),
+        &json,
+    )
+    .await
 }
 
 /// Buy an item at the Grand Exchange on the character's map.
 /// https://api.artifactsmmo.com/docs/#/operations/action_ge_buy_item_my__name__action_grandexchange_buy_post
 pub async fn action_grandexchange_buy_item(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     id: String,
     quantity: i64,
 ) -> Result<serde_json::Value> {
@@ -396,9 +476,10 @@ pub async fn action_grandexchange_buy_item(
     let _enter = span.enter();
 
     let json = format!(r#"{{"id": "{}", "quantity": {}}}"#, id, quantity);
-    post(
+    post_action(
         settings,
-        &format!("/my/{}/action/grandexchange/buy", name),
+        character,
+        &format!("/my/{}/action/grandexchange/buy", character.name),
         &json,
     )
     .await
@@ -408,7 +489,7 @@ pub async fn action_grandexchange_buy_item(
 /// https://api.artifactsmmo.com/docs/#/operations/action_ge_create_sell_order_my__name__action_grandexchange_sell_post
 pub async fn action_grandexchange_create_sell_order(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     code: ValidatedString,
     quantity: i64,
     price: i64,
@@ -426,9 +507,10 @@ pub async fn action_grandexchange_create_sell_order(
         code, price, quantity
     );
 
-    post(
+    post_action(
         settings,
-        &format!("/my/{}/action/grandexexchange/sell", name),
+        character,
+        &format!("/my/{}/action/grandexexchange/sell", character.name),
         &json,
     )
     .await
@@ -438,7 +520,7 @@ pub async fn action_grandexchange_create_sell_order(
 /// https://api.artifactsmmo.com/docs/#/operations/action_ge_cancel_sell_order_my__name__action_grandexchange_cancel_post
 pub async fn action_grandexchange_cancel_sell_order(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     id: String,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_grandexchange_cancel_sell_order", id = %id);
@@ -446,9 +528,10 @@ pub async fn action_grandexchange_cancel_sell_order(
 
     let json = format!(r#"{{"id": "{}"}}"#, id);
 
-    post(
+    post_action(
         settings,
-        &format!("/my/{}/action/grandexchange/cancel", name),
+        character,
+        &format!("/my/{}/action/grandexchange/cancel", character.name),
         &json,
     )
     .await
@@ -458,40 +541,58 @@ pub async fn action_grandexchange_cancel_sell_order(
 /// https://api.artifactsmmo.com/docs/#/operations/action_complete_task_my__name__action_task_complete_post
 pub async fn action_complete_task(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_complete_task");
     let _enter = span.enter();
-    post(settings, &format!("/my/{}/action/task/complete", name), "").await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/task/complete", character.name),
+        "",
+    )
+    .await
 }
 
 /// Exchange 6 tasks coins for a random reward. Rewards are exclusive items or resources.
 /// https://api.artifactsmmo.com/docs/#/operations/action_task_exchange_my__name__action_task_exchange_post
 pub async fn action_task_exchange(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_task_exchange");
     let _enter = span.enter();
-    post(settings, &format!("/my/{}/action/task/exchange", name), "").await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/task/exchange", character.name),
+        "",
+    )
+    .await
 }
 
 /// Accepting a new task.
 /// https://api.artifactsmmo.com/docs/#/operations/action_accept_new_task_my__name__action_task_new_post
 pub async fn action_accept_new_task(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_accept_new_task");
     let _enter = span.enter();
-    post(settings, &format!("/my/{}/action/task/new", name), "").await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/task/new", character.name),
+        "",
+    )
+    .await
 }
 
 /// Trading items with a Tasks Master.
 /// https://api.artifactsmmo.com/docs/#/operations/action_task_trade_my__name__action_task_trade_post
 pub async fn action_task_trade(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     code: ValidatedString,
     quantity: i64,
 ) -> Result<serde_json::Value> {
@@ -499,47 +600,65 @@ pub async fn action_task_trade(
     let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
-    post(settings, &format!("/my/{}/action/task/trade", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/task/trade", character.name),
+        &json,
+    )
+    .await
 }
 
 /// Cancel a task for 1 tasks coin.
 /// https://api.artifactsmmo.com/docs/#/operations/action_task_cancel_my__name__action_task_cancel_post
 pub async fn action_cancel_task(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_cancel_task");
     let _enter = span.enter();
-    post(settings, &format!("/my/{}/action/task/cancel", name), "").await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/task/cancel", character.name),
+        "",
+    )
+    .await
 }
 
 /// Give gold to another character in your account on the same map.
 /// https://api.artifactsmmo.com/docs/#/operations/action_give_gold_my__name__action_give_gold_post
 pub async fn action_give_gold(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     quantity: i64,
-    character: ValidatedString,
+    target_character: ValidatedString,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_give_gold", quantity, character = %character);
+    let span = info_span!("action_give_gold", quantity, target_character = %target_character);
     let _enter = span.enter();
 
     let json = format!(
         r#"{{"quantity": {}, "character": "{}"}}"#,
-        quantity, character
+        quantity, target_character
     );
-    post(settings, &format!("/my/{}/action/give/gold", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/give/gold", character.name),
+        &json,
+    )
+    .await
 }
 
 /// Give items to another character in your account on the same map. The cooldown will be 3 seconds multiplied by the number of different items given.
 /// https://api.artifactsmmo.com/docs/#/operations/action_give_items_my__name__action_give_item_post
 pub async fn action_give_item(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     items: Vec<(ValidatedString, i64)>,
-    character: ValidatedString,
+    target_character: ValidatedString,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_give_item", items = ?items, character = %character);
+    let span = info_span!("action_give_item", items = ?items, target_character = %target_character);
     let _enter = span.enter();
 
     let items_json: Vec<String> = items
@@ -550,12 +669,13 @@ pub async fn action_give_item(
     let json_string = format!(
         r#"{{"items": [{}], "character": "{}"}}"#,
         items_json.join(","),
-        character
+        target_character
     );
 
-    post(
+    post_action(
         settings,
-        &format!("/my/{}/action/give/item", name),
+        character,
+        &format!("/my/{}/action/give/item", character.name),
         &json_string,
     )
     .await
@@ -565,7 +685,7 @@ pub async fn action_give_item(
 /// https://api.artifactsmmo.com/docs/#/operations/action_delete_item_my__name__action_delete_post
 pub async fn action_delete_item(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     code: ValidatedString,
     quantity: i64,
 ) -> Result<serde_json::Value> {
@@ -573,19 +693,31 @@ pub async fn action_delete_item(
     let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
-    post(settings, &format!("/my/{}/action/delete", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/delete", character.name),
+        &json,
+    )
+    .await
 }
 
 /// Change the skin of your character.
 /// https://api.artifactsmmo.com/docs/#/operations/action_change_skin_my__name__action_change_skin_post
 pub async fn action_change_skin(
     settings: &Settings,
-    name: ValidatedString,
+    character: &mut Character,
     skin: SkinType,
 ) -> Result<serde_json::Value> {
     let span = info_span!("action_change_skin", skin = %skin);
     let _enter = span.enter();
 
     let json = format!(r#"{{"skin": "{}"}}"#, skin.to_string());
-    post(settings, &format!("/my/{}/action/change_skin", name), &json).await
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/change_skin", character.name),
+        &json,
+    )
+    .await
 }

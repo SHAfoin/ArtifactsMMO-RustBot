@@ -22,21 +22,10 @@ async fn main() -> Result<()> {
     let settings: Settings = config::app_configuration();
     let _guard = logging::init_logging();
 
-    let character: Character;
-
-    match get_character(&settings, "Baba".into()).await {
-        Ok(m) => {
-            println!("Character info: {}", serde_json::to_string_pretty(&m)?);
-            character = serde_json::from_value(m["data"].clone())?;
-        }
-        Err(e) => {
-            eprintln!("Error fetching character: {}", e);
-            return Err(e);
-        }
-    }
+    let mut baba = Character::fetch_character(&settings, &"Baba".into()).await;
 
     let searched_resource = ValidatedString::new("ash_tree").unwrap();
-    collect_ressource(&settings, &searched_resource, &character).await?;
+    collect_ressource(&settings, &searched_resource, &mut baba).await?;
 
     Ok(())
 }

@@ -60,12 +60,6 @@ pub async fn action_move(
     y: Option<i64>,
     map_id: Option<i64>,
 ) -> Result<serde_json::Value> {
-    if map_id.is_some() && (x.is_some() || y.is_some()) {
-        return Err(anyhow::anyhow!(
-            "Provide either 'map_id' or both 'x' and 'y', but not both."
-        ));
-    }
-
     let mut json_body = serde_json::Map::new();
 
     if let (Some(x), Some(y)) = (x, y) {
@@ -510,7 +504,10 @@ pub async fn action_grandexchange_create_sell_order(
     post_action(
         settings,
         character,
-        &format!("/my/{}/action/grandexexchange/sell", character.name),
+        &format!(
+            "/my/{}/action/grandexchange/create-sell-order",
+            character.name
+        ),
         &json,
     )
     .await
@@ -532,6 +529,66 @@ pub async fn action_grandexchange_cancel_sell_order(
         settings,
         character,
         &format!("/my/{}/action/grandexchange/cancel", character.name),
+        &json,
+    )
+    .await
+}
+
+/// Create a buy order at the Grand Exchange on the character's map. The total gold (price * quantity) is locked when creating the order. Other players can then sell items to fulfill your order. Items will be delivered to your pending items when the order is filled.
+/// https://api.artifactsmmo.com/docs/#/operations/action_ge_create_buy_order_my__name__action_grandexchange_create_buy_order_post
+pub async fn action_grandexchange_create_buy_order(
+    settings: &Settings,
+    character: &mut Character,
+    code: ValidatedString,
+    quantity: i64,
+    price: i64,
+) -> Result<serde_json::Value> {
+    let span = info_span!(
+        "action_grandexchange_create_buy_order",
+        code = %code,
+        quantity,
+        price
+    );
+    let _enter = span.enter();
+
+    let json = format!(
+        r#"{{"code": "{}", "price": {}, "quantity": {}}}"#,
+        code, price, quantity
+    );
+
+    post_action(
+        settings,
+        character,
+        &format!(
+            "/my/{}/action/grandexexchange/create-buy-order",
+            character.name
+        ),
+        &json,
+    )
+    .await
+}
+
+/// Sell items to an existing buy order at the Grand Exchange on the character's map. You will receive the gold immediately. The buyer will receive the items in their pending items.
+/// https://api.artifactsmmo.com/docs/#/operations/action_ge_fill_my__name__action_grandexchange_fill_post
+pub async fn action_grandexchange_fill(
+    settings: &Settings,
+    character: &mut Character,
+    id: ValidatedString,
+    quantity: i64,
+) -> Result<serde_json::Value> {
+    let span = info_span!(
+        "action_grandexchange_fill",
+        id = %id,
+        quantity
+    );
+    let _enter = span.enter();
+
+    let json = format!(r#"{{"id": "{}", "quantity": {}}}"#, id, quantity);
+
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/grandexchange/fill", character.name),
         &json,
     )
     .await
@@ -677,6 +734,25 @@ pub async fn action_give_item(
         character,
         &format!("/my/{}/action/give/item", character.name),
         &json_string,
+    )
+    .await
+}
+
+/// Claim a pending item with a specific character.
+/// https://api.artifactsmmo.com/docs/#/operations/action_claim_pending_item_my__name__action_claim_item__id__post
+pub async fn action_claim_pending_item(
+    settings: &Settings,
+    character: &mut Character,
+    id: &ValidatedString,
+) -> Result<serde_json::Value> {
+    let span = info_span!("action_claim_pending_item", id = %id);
+    let _enter = span.enter();
+
+    post_action(
+        settings,
+        character,
+        &format!("/my/{}/action/claim_item/{}", character.name, id),
+        "",
     )
     .await
 }

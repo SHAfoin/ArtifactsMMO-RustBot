@@ -8,14 +8,6 @@ use crate::{
     },
 };
 
-/// Fetch account details.
-/// https://api.artifactsmmo.com/docs/#/operations/get_account_details_my_details_get
-pub async fn get_account_details(settings: &Settings) -> Result<serde_json::Value> {
-    let span = info_span!("get_account_details");
-    let _enter = span.enter();
-    get(settings, "/my/details", None).await
-}
-
 /// Fetch bank details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_bank_details_my_bank_get
 pub async fn get_bank_details(settings: &Settings) -> Result<serde_json::Value> {
@@ -96,4 +88,24 @@ pub async fn get_my_grandexchange_sell_history(
     }
 
     get(settings, "/my/grandexchange/history", Some(query_params)).await
+}
+
+/// Fetch account details.
+/// https://api.artifactsmmo.com/docs/#/operations/get_account_details_my_details_get
+pub async fn get_account_details(settings: &Settings) -> Result<serde_json::Value> {
+    let span = info_span!("get_account_details");
+    let _enter = span.enter();
+    get(settings, "/my/details", None).await
+}
+
+/// Retrieve all unclaimed pending items for your account.
+/// These are items from various sources (achievements, grand exchange, events, etc.) that can be claimed by any character on your account using /my/{name}/action/claim/{id}.
+/// https://api.artifactsmmo.com/docs/#/operations/get_pending_items_my_pending_items_get
+pub async fn get_pending_items(
+    settings: &Settings,
+    pagination: Option<PaginationParams>,
+) -> Result<serde_json::Value> {
+    let span = info_span!("get_pending_items");
+    let _enter = span.enter();
+    get(settings, "/my/pending-items", None).await
 }

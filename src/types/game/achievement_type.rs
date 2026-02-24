@@ -8,6 +8,8 @@ pub enum AchievementType {
     Task,
     Other,
     Use,
+    NpcBuy,
+    NpcSell,
 }
 
 impl ToString for AchievementType {
@@ -22,6 +24,8 @@ impl ToString for AchievementType {
             AchievementType::Task => "task".to_string(),
             AchievementType::Other => "other".to_string(),
             AchievementType::Use => "use".to_string(),
+            AchievementType::NpcBuy => "npc_buy".to_string(),
+            AchievementType::NpcSell => "npc_sell".to_string(),
         }
     }
 }

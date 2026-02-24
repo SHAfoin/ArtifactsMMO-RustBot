@@ -5,6 +5,8 @@ use tracing::{error, info};
 
 use crate::types::{common::settings::Settings, game::character::Character};
 
+/// Special POST request for the API that checks for cooldown and updates the character's state after the action.
+/// Must be used for all actions that can trigger a cooldown, otherwise the character's state won't be updated and the bot might try to perform an action while the character is on cooldown, which will result in an error.
 pub async fn post_action(
     settings: &Settings,
     character: &mut Character,
@@ -32,11 +34,12 @@ pub async fn post_action(
     }
 }
 
+/// POST request for the API with logging.
 pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_json::Value> {
+    // ========= Créer l'URL, le client HTTP, et avoir la réponse
+
     let url = format!("{}{}", settings.api_url, path);
-
     let client = reqwest::Client::new();
-
     let mut headers = reqwest::header::HeaderMap::new();
     headers.insert("Content-Type", HeaderValue::from_static("application/json"));
     headers.insert("Accept", HeaderValue::from_static("application/json"));
@@ -44,7 +47,6 @@ pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_j
         "Authorization",
         HeaderValue::from_str(&format!("Bearer {}", settings.api_token.expose_secret())).unwrap(),
     );
-
     let response = client
         .post(url)
         .headers(headers)
@@ -52,10 +54,16 @@ pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_j
         .send()
         .await?;
 
+    // =========
+    // ========= Récupérer le status et la réponse en JSON
+
     let status = response.status();
     let response_text = response.text().await?;
     let response_json: serde_json::Value = serde_json::from_str(&response_text)
         .unwrap_or_else(|_| serde_json::Value::String(response_text.clone()));
+
+    // =========
+    // ======== Si succès yayyy, sinon log l'erreur et renvoyer le code d'erreur (la fonction d'au dessus doit gérer selon le cas)
 
     if status.is_success() {
         info!("HTTP {}", status.as_str());
@@ -72,13 +80,15 @@ pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_j
     }
 }
 
+/// GET request for the API with logging.
 pub async fn get(
     settings: &Settings,
     path: &str,
     query_params: Option<Vec<(&str, String)>>,
 ) -> Result<serde_json::Value> {
-    let url = format!("{}{}", settings.api_url, path);
+    // ========= Créer l'URL, le client HTTP, et avoir la réponse
 
+    let url = format!("{}{}", settings.api_url, path);
     let client = reqwest::Client::new();
 
     let mut headers = reqwest::header::HeaderMap::new();
@@ -95,10 +105,16 @@ pub async fn get(
         .send()
         .await?;
 
+    // =========
+    // ========= Récupérer le status et la réponse en JSON
+
     let status = response.status();
     let response_text = response.text().await?;
     let response_json: serde_json::Value = serde_json::from_str(&response_text)
         .unwrap_or_else(|_| serde_json::Value::String(response_text.clone()));
+
+    // =========
+    // ======== Si succès yayyy, sinon log l'erreur et renvoyer le code d'erreur (la fonction d'au dessus doit gérer selon le cas)
 
     if status.is_success() {
         info!("HTTP {}", status.as_str());

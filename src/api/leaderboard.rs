@@ -20,7 +20,7 @@ pub async fn get_characters_leaderboard(
     sort: Option<Skill>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_characters_leaderboard", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), sort = %sort.as_ref().map_or("".to_string(), |s| s.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_characters_leaderboard", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), sort = %sort.as_ref().map_or("".to_string(), |s| s.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -48,7 +48,7 @@ pub async fn get_account_leaderboard(
     sort: Option<ScoreType>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_account_leaderboard", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), sort = %sort.as_ref().map_or("".to_string(), |s| s.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_account_leaderboard", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), sort = %sort.as_ref().map_or("".to_string(), |s| s.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();

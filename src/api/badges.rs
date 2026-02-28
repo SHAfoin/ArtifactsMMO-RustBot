@@ -12,7 +12,7 @@ pub async fn get_all_badges(
     settings: &Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_all_badges", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_all_badges", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -27,7 +27,7 @@ pub async fn get_all_badges(
 /// Retrieve the details of a badge.
 /// https://api.artifactsmmo.com/docs/#/operations/get_badge_badges__code__get
 pub async fn get_badge(settings: &Settings, code: &str) -> Result<serde_json::Value> {
-    let span = info_span!("get_badge", code = %code);
+    let span = info_span!(target: "http", "get_badge", code = %code);
     let _enter = span.enter();
 
     get(settings, &format!("/badges/{}", code), None).await

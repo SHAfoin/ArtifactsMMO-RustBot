@@ -117,7 +117,7 @@ pub async fn get(
     // ======== Si succès yayyy, sinon log l'erreur et renvoyer le code d'erreur (la fonction d'au dessus doit gérer selon le cas)
 
     if status.is_success() {
-        info!("HTTP {}", status.as_str());
+        info!("HTTP {} OK", status.as_str());
         Ok(response_json)
     } else {
         error!(

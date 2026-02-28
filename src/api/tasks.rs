@@ -16,7 +16,7 @@ pub async fn get_all_tasks(
     _type: Option<TaskType>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_all_tasks", max_level = %max_level.map_or("".to_string(), |f| f.to_string()), min_level = %min_level.map_or("".to_string(), |f| f.to_string()), skill = %skill.as_ref().map_or("".to_string(), |s| s.to_string()), type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_all_tasks", max_level = %max_level.map_or("".to_string(), |f| f.to_string()), min_level = %min_level.map_or("".to_string(), |f| f.to_string()), skill = %skill.as_ref().map_or("".to_string(), |s| s.to_string()), type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -59,7 +59,7 @@ pub async fn get_all_tasks(
 /// Retrieve the details of a task.
 /// https://api.artifactsmmo.com/docs/#/operations/get_task_tasks_list__code__get
 pub async fn get_task(settings: &Settings, code: &str) -> Result<serde_json::Value> {
-    let span = info_span!("get_task", code);
+    let span = info_span!(target: "http", "get_task", code);
     let _enter = span.enter();
 
     get(settings, &format!("/tasks/list/{}", code), None).await
@@ -68,7 +68,7 @@ pub async fn get_task(settings: &Settings, code: &str) -> Result<serde_json::Val
 /// Retrieve the details of a tasks reward.
 /// https://api.artifactsmmo.com/docs/#/operations/get_tasks_reward_tasks_rewards__code__get
 pub async fn get_tasks_reward(settings: &Settings, code: &str) -> Result<serde_json::Value> {
-    let span = info_span!("get_tasks_reward", code);
+    let span = info_span!(target: "http", "get_tasks_reward", code);
     let _enter = span.enter();
 
     get(settings, &format!("/tasks/rewards/{}", code), None).await
@@ -80,7 +80,7 @@ pub async fn get_all_tasks_rewards(
     settings: &Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_all_tasks_rewards", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_all_tasks_rewards", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();

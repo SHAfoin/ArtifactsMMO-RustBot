@@ -21,7 +21,7 @@ pub async fn get_all_npcs(
     _type: Option<NPCType>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_all_npcs", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_all_npcs", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -47,7 +47,7 @@ pub async fn get_npc(
     settings: &Settings,
     code: Option<ValidatedString>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_npc", code = %code.as_ref().unwrap_or(&ValidatedString::default()));
+    let span = info_span!(target: "http", "get_npc", code = %code.as_ref().unwrap_or(&ValidatedString::default()));
     let _enter = span.enter();
 
     get(
@@ -65,7 +65,7 @@ pub async fn get_npc_items(
     code: &str,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_npc_items", code);
+    let span = info_span!(target: "http", "get_npc_items", code);
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -89,7 +89,7 @@ pub async fn get_all_npcs_items(
     npc: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_all_npcs_items", code = %code.as_ref().unwrap_or(&ValidatedString::default()), currency = %currency.as_ref().unwrap_or(&ValidatedString::default()), npc = %npc.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_all_npcs_items", code = %code.as_ref().unwrap_or(&ValidatedString::default()), currency = %currency.as_ref().unwrap_or(&ValidatedString::default()), npc = %npc.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();

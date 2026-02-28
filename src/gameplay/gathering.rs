@@ -35,10 +35,10 @@ pub async fn collect_ressource(
 
             match action_move(&settings, character, Some(x), Some(y), None).await {
                 Ok(m) => {
-                    println!("{}", m);
+                    println!("Move result: {}", m);
                     match action_gathering(&settings, character).await {
                         Ok(m) => {
-                            println!("{}", m);
+                            println!("Gathering result: {}", m);
                             return Ok(m);
                         }
                         Err(e) => {
@@ -51,7 +51,7 @@ pub async fn collect_ressource(
                     println!("Already at location");
                     match action_gathering(&settings, character).await {
                         Ok(m) => {
-                            println!("{}", m);
+                            println!("Gathering result: {}", m);
                             return Ok(m);
                         }
                         Err(e) => {

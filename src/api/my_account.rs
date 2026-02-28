@@ -11,7 +11,7 @@ use crate::{
 /// Fetch bank details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_bank_details_my_bank_get
 pub async fn get_bank_details(settings: &Settings) -> Result<serde_json::Value> {
-    let span = info_span!("get_bank_details");
+    let span = info_span!(target: "http", "get_bank_details");
     let _enter = span.enter();
     get(settings, "/my/bank", None).await
 }
@@ -23,7 +23,7 @@ pub async fn get_bank_items(
     item_code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_bank_items", item_code = %item_code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_bank_items", item_code = %item_code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -46,7 +46,7 @@ pub async fn get_my_grandexchange_sell_orders(
     code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_my_grandexchange_sell_orders", code = %code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_my_grandexchange_sell_orders", code = %code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -70,7 +70,7 @@ pub async fn get_my_grandexchange_sell_history(
     id: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_my_grandexchange_sell_history", code = %code.as_ref().unwrap_or(&ValidatedString::default()), id = %id.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_my_grandexchange_sell_history", code = %code.as_ref().unwrap_or(&ValidatedString::default()), id = %id.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -93,7 +93,7 @@ pub async fn get_my_grandexchange_sell_history(
 /// Fetch account details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_account_details_my_details_get
 pub async fn get_account_details(settings: &Settings) -> Result<serde_json::Value> {
-    let span = info_span!("get_account_details");
+    let span = info_span!(target: "http", "get_account_details");
     let _enter = span.enter();
     get(settings, "/my/details", None).await
 }
@@ -105,7 +105,7 @@ pub async fn get_pending_items(
     settings: &Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_pending_items");
+    let span = info_span!(target: "http", "get_pending_items");
     let _enter = span.enter();
     get(settings, "/my/pending-items", None).await
 }

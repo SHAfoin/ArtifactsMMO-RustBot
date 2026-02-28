@@ -19,7 +19,7 @@ pub async fn get_all_monsters(
     name: Option<ValidatedStringWithSpaces>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_all_monsters", drop = %drop.as_ref().unwrap_or(&ValidatedString::default()), max_level = %max_level.unwrap_or(0), min_level = %min_level.unwrap_or(0), name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_all_monsters", drop = %drop.as_ref().unwrap_or(&ValidatedString::default()), max_level = %max_level.unwrap_or(0), min_level = %min_level.unwrap_or(0), name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -56,7 +56,7 @@ pub async fn get_all_monsters(
 /// Retrieve the details of a monster.
 /// https://api.artifactsmmo.com/docs/#/operations/get_monster_monsters__code__get
 pub async fn get_monster(settings: &Settings, code: &str) -> Result<serde_json::Value> {
-    let span = info_span!("get_monster", code);
+    let span = info_span!(target: "http", "get_monster", code);
     let _enter = span.enter();
 
     get(settings, &format!("/monsters/{}", code), None).await

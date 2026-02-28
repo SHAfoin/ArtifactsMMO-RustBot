@@ -16,7 +16,7 @@ pub async fn get_all_grandexchange_orders(
     code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_all_grandexchange_orders", seller = %seller.as_ref().unwrap_or(&ValidatedString::default()), code = %code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_all_grandexchange_orders", seller = %seller.as_ref().unwrap_or(&ValidatedString::default()), code = %code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -42,7 +42,7 @@ pub async fn get_grandexchange_order(
     settings: &Settings,
     id: ValidatedString,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_grandexchange_order", id = %id);
+    let span = info_span!(target: "http", "get_grandexchange_order", id = %id);
     let _enter = span.enter();
 
     get(settings, &format!("/grandexchange/orders/{}", id), None).await
@@ -57,7 +57,7 @@ pub async fn get_grandexchange_sell_history(
     seller: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_grandexchange_sell_history", code = %code, buyer = %buyer.as_ref().unwrap_or(&ValidatedString::default()), seller = %seller.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_grandexchange_sell_history", code = %code, buyer = %buyer.as_ref().unwrap_or(&ValidatedString::default()), seller = %seller.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();

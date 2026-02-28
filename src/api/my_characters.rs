@@ -18,7 +18,7 @@ pub async fn get_all_characters_logs(
     settings: &Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_all_characters_logs");
+    let span = info_span!(target: "http", "get_all_characters_logs");
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -36,7 +36,7 @@ pub async fn get_character_logs(
     settings: &Settings,
     character_name: ValidatedString,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_characters_logs", character = %character_name);
+    let span = info_span!(target: "http", "get_characters_logs", character = %character_name);
     let _enter = span.enter();
 
     get(settings, &format!("/my/logs/{}", character_name), None).await
@@ -45,7 +45,7 @@ pub async fn get_character_logs(
 /// List of your characters.
 /// https://api.artifactsmmo.com/docs/#/operations/get_my_characters_my_characters_get
 pub async fn get_my_characters(settings: &Settings) -> Result<serde_json::Value> {
-    let span = info_span!("get_my_characters");
+    let span = info_span!(target: "http", "get_my_characters");
     let _enter = span.enter();
 
     get(settings, "/my/characters", None).await
@@ -73,7 +73,7 @@ pub async fn action_move(
 
     let json = serde_json::Value::Object(json_body).to_string();
 
-    let span = info_span!("action_move", x, y, map_id);
+    let span = info_span!(target: "http", "action_move", x, y, map_id);
     let _enter = span.enter();
 
     post_action(
@@ -91,7 +91,7 @@ pub async fn action_transition(
     settings: &Settings,
     character: &mut Character,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_transition");
+    let span = info_span!(target: "http", "action_transition");
     let _enter = span.enter();
 
     post_action(
@@ -109,7 +109,7 @@ pub async fn action_rest(
     settings: &Settings,
     character: &mut Character,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_rest");
+    let span = info_span!(target: "http", "action_rest");
     let _enter = span.enter();
 
     post_action(
@@ -195,7 +195,7 @@ pub async fn action_use_item(
     code: ValidatedString,
     quantity: i64,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_use_item", code = %code, quantity);
+    let span = info_span!(target: "http", "action_use_item", code = %code, quantity);
     let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
@@ -215,7 +215,7 @@ pub async fn action_fight(
     character: &mut Character,
     participants: Option<Vec<ValidatedString>>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_fight", participants = ?participants);
+    let span = info_span!(target: "http", "action_fight", participants = ?participants);
     let _enter = span.enter();
 
     // Construct the JSON body
@@ -245,7 +245,7 @@ pub async fn action_gathering(
     settings: &Settings,
     character: &mut Character,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_gathering");
+    let span = info_span!(target: "http", "action_gathering");
     let _enter = span.enter();
     post_action(
         settings,
@@ -264,7 +264,7 @@ pub async fn action_crafting(
     code: ValidatedString,
     quantity: Option<i64>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_crafting", code = %code, quantity = quantity.unwrap_or(1));
+    let span = info_span!(target: "http", "action_crafting", code = %code, quantity = quantity.unwrap_or(1));
     let _enter = span.enter();
 
     let json = format!(
@@ -288,7 +288,7 @@ pub async fn action_deposit_bank_gold(
     character: &mut Character,
     quantity: i64,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_deposit_bank_gold", quantity);
+    let span = info_span!(target: "http", "action_deposit_bank_gold", quantity);
     let _enter = span.enter();
 
     let json = format!(r#"{{"quantity": {}}}"#, quantity);
@@ -308,7 +308,7 @@ pub async fn action_deposit_bank_item(
     character: &mut Character,
     items: Vec<(ValidatedString, i64)>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_deposit_bank_item", items = ?items);
+    let span = info_span!(target: "http", "action_deposit_bank_item", items = ?items);
     let _enter = span.enter();
 
     let items_json: Vec<String> = items
@@ -334,7 +334,7 @@ pub async fn action_withdraw_bank_item(
     character: &mut Character,
     items: Vec<(ValidatedString, i64)>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_withdraw_bank_item", items = ?items);
+    let span = info_span!(target: "http", "action_withdraw_bank_item", items = ?items);
     let _enter = span.enter();
 
     let items_json: Vec<String> = items
@@ -360,7 +360,7 @@ pub async fn action_withdraw_bank_gold(
     character: &mut Character,
     quantity: i64,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_withdraw_bank_gold", quantity);
+    let span = info_span!(target: "http", "action_withdraw_bank_gold", quantity);
     let _enter = span.enter();
 
     let json = format!(r#"{{"quantity": {}}}"#, quantity);
@@ -379,7 +379,7 @@ pub async fn action_buy_bank_expansion(
     settings: &Settings,
     character: &mut Character,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_buy_bank_expansion");
+    let span = info_span!(target: "http", "action_buy_bank_expansion");
     let _enter = span.enter();
 
     post_action(
@@ -399,7 +399,7 @@ pub async fn action_npc_buy_item(
     code: ValidatedString,
     quantity: i64,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_npc_buy_item", code = %code, quantity);
+    let span = info_span!(target: "http", "action_npc_buy_item", code = %code, quantity);
     let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
@@ -420,7 +420,7 @@ pub async fn action_npc_sell_item(
     code: ValidatedString,
     quantity: i64,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_npc_sell_item", code = %code, quantity);
+    let span = info_span!(target: "http", "action_npc_sell_item", code = %code, quantity);
     let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
@@ -441,7 +441,7 @@ pub async fn action_recycling(
     code: ValidatedString,
     quantity: Option<i64>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_recycling", code = %code, quantity = quantity.unwrap_or(1));
+    let span = info_span!(target: "http", "action_recycling", code = %code, quantity = quantity.unwrap_or(1));
     let _enter = span.enter();
 
     let json = format!(
@@ -466,7 +466,7 @@ pub async fn action_grandexchange_buy_item(
     id: String,
     quantity: i64,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_grandexchange_buy_item", id = %id, quantity);
+    let span = info_span!(target: "http", "action_grandexchange_buy_item", id = %id, quantity);
     let _enter = span.enter();
 
     let json = format!(r#"{{"id": "{}", "quantity": {}}}"#, id, quantity);
@@ -488,7 +488,7 @@ pub async fn action_grandexchange_create_sell_order(
     quantity: i64,
     price: i64,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(
+    let span = info_span!(target: "http", 
         "action_grandexchange_create_sell_order",
         code = %code,
         quantity,
@@ -520,7 +520,7 @@ pub async fn action_grandexchange_cancel_sell_order(
     character: &mut Character,
     id: String,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_grandexchange_cancel_sell_order", id = %id);
+    let span = info_span!(target: "http", "action_grandexchange_cancel_sell_order", id = %id);
     let _enter = span.enter();
 
     let json = format!(r#"{{"id": "{}"}}"#, id);
@@ -543,7 +543,7 @@ pub async fn action_grandexchange_create_buy_order(
     quantity: i64,
     price: i64,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(
+    let span = info_span!(target: "http", 
         "action_grandexchange_create_buy_order",
         code = %code,
         quantity,
@@ -576,7 +576,7 @@ pub async fn action_grandexchange_fill(
     id: ValidatedString,
     quantity: i64,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(
+    let span = info_span!(target: "http", 
         "action_grandexchange_fill",
         id = %id,
         quantity
@@ -600,7 +600,7 @@ pub async fn action_complete_task(
     settings: &Settings,
     character: &mut Character,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_complete_task");
+    let span = info_span!(target: "http", "action_complete_task");
     let _enter = span.enter();
     post_action(
         settings,
@@ -617,7 +617,7 @@ pub async fn action_task_exchange(
     settings: &Settings,
     character: &mut Character,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_task_exchange");
+    let span = info_span!(target: "http", "action_task_exchange");
     let _enter = span.enter();
     post_action(
         settings,
@@ -634,7 +634,7 @@ pub async fn action_accept_new_task(
     settings: &Settings,
     character: &mut Character,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_accept_new_task");
+    let span = info_span!(target: "http", "action_accept_new_task");
     let _enter = span.enter();
     post_action(
         settings,
@@ -653,7 +653,7 @@ pub async fn action_task_trade(
     code: ValidatedString,
     quantity: i64,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_task_trade", code = %code, quantity);
+    let span = info_span!(target: "http", "action_task_trade", code = %code, quantity);
     let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
@@ -672,7 +672,7 @@ pub async fn action_cancel_task(
     settings: &Settings,
     character: &mut Character,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_cancel_task");
+    let span = info_span!(target: "http", "action_cancel_task");
     let _enter = span.enter();
     post_action(
         settings,
@@ -691,7 +691,7 @@ pub async fn action_give_gold(
     quantity: i64,
     target_character: ValidatedString,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_give_gold", quantity, target_character = %target_character);
+    let span = info_span!(target: "http", "action_give_gold", quantity, target_character = %target_character);
     let _enter = span.enter();
 
     let json = format!(
@@ -715,7 +715,7 @@ pub async fn action_give_item(
     items: Vec<(ValidatedString, i64)>,
     target_character: ValidatedString,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_give_item", items = ?items, target_character = %target_character);
+    let span = info_span!(target: "http", "action_give_item", items = ?items, target_character = %target_character);
     let _enter = span.enter();
 
     let items_json: Vec<String> = items
@@ -745,7 +745,7 @@ pub async fn action_claim_pending_item(
     character: &mut Character,
     id: &ValidatedString,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_claim_pending_item", id = %id);
+    let span = info_span!(target: "http", "action_claim_pending_item", id = %id);
     let _enter = span.enter();
 
     post_action(
@@ -765,7 +765,7 @@ pub async fn action_delete_item(
     code: ValidatedString,
     quantity: i64,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_delete_item", code = %code, quantity);
+    let span = info_span!(target: "http", "action_delete_item", code = %code, quantity);
     let _enter = span.enter();
 
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
@@ -785,7 +785,7 @@ pub async fn action_change_skin(
     character: &mut Character,
     skin: SkinType,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("action_change_skin", skin = %skin);
+    let span = info_span!(target: "http", "action_change_skin", skin = %skin);
     let _enter = span.enter();
 
     let json = format!(r#"{{"skin": "{}"}}"#, skin.to_string());

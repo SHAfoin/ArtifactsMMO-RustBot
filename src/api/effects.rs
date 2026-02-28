@@ -12,7 +12,7 @@ pub async fn get_all_effects(
     settings: &Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_all_effects", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
+    let span = info_span!(target: "http", "get_all_effects", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
     let _enter = span.enter();
 
     let mut query_params = Vec::new();
@@ -25,7 +25,7 @@ pub async fn get_all_effects(
 /// Retrieve the details of a badge.
 /// https://api.artifactsmmo.com/docs/#/operations/get_effect_effects__code__get
 pub async fn get_effect(settings: &Settings, code: &str) -> Result<serde_json::Value> {
-    let span = info_span!("get_effect", code = %code);
+    let span = info_span!(target: "http", "get_effect", code = %code);
     let _enter = span.enter();
 
     get(settings, &format!("/effects/{}", code), None).await

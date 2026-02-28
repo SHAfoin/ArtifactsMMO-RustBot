@@ -12,7 +12,7 @@ pub async fn get_character(
     settings: &Settings,
     name: &ValidatedString,
 ) -> Result<serde_json::Value> {
-    let span = info_span!("get_character", name = %name);
+    let span = info_span!(target: "http", "get_character", name = %name);
     let _enter = span.enter();
 
     get(settings, &format!("/characters/{}", name), None).await

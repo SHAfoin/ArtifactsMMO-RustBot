@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
 use anyhow::Result;
+use tracing::info;
+use tracing_subscriber::filter::targets;
 
 use crate::{
     api::characters::get_character,
@@ -20,7 +22,7 @@ pub mod types;
 #[tokio::main]
 async fn main() -> Result<()> {
     let settings: Settings = config::app_configuration();
-    let _guard = logging::init_logging();
+    let (_guard_http, _guard_gameplay) = logging::init_logging(true);
 
     let mut baba = Character::fetch_character(&settings, &"Baba".into()).await;
 

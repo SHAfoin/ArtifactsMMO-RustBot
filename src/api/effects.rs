@@ -1,5 +1,4 @@
 use anyhow::Result;
-use tracing::info_span;
 
 use crate::{
     api::utils::get,
@@ -8,13 +7,11 @@ use crate::{
 
 /// List of all effects. Effects are used by equipment, tools, runes, consumables and monsters. An effect is an action that produces an effect on the game.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_effects_effects_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_all_effects(
     settings: &Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_all_effects", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());
@@ -24,9 +21,7 @@ pub async fn get_all_effects(
 
 /// Retrieve the details of a badge.
 /// https://api.artifactsmmo.com/docs/#/operations/get_effect_effects__code__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_effect(settings: &Settings, code: &str) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_effect", code = %code);
-    let _enter = span.enter();
-
     get(settings, &format!("/effects/{}", code), None).await
 }

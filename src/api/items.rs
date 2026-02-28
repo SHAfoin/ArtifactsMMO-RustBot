@@ -1,5 +1,4 @@
 use anyhow::Result;
-use tracing::info_span;
 
 use crate::{
     api::utils::get,
@@ -15,6 +14,7 @@ use crate::{
 
 /// Fetch items details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_items_items_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_all_items(
     settings: &Settings,
     craft_material: Option<ValidatedString>,
@@ -25,9 +25,6 @@ pub async fn get_all_items(
     _type: Option<ItemType>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_all_items", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()), craft_material = %craft_material.as_ref().unwrap_or(&ValidatedString::default()), craft_skill = %craft_skill.as_ref().map_or("".to_string(), |s| s.to_string()), max_level = %max_level.unwrap_or(0), min_level = %min_level.unwrap_or(0), name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), _type = %_type.as_ref().map_or("".to_string(), |t| t.as_str().to_string()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
 
     if let Some(craft_skill) = &craft_skill {
@@ -75,8 +72,7 @@ pub async fn get_all_items(
 
 /// Retrieve the details of a item.
 /// https://api.artifactsmmo.com/docs/#/operations/get_item_items__code__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_item(settings: &Settings, code: &str) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_item", code);
-    let _enter = span.enter();
     get(settings, &format!("/items/{}", code), None).await
 }

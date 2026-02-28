@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use tracing::error;
 
 use crate::{
     api::characters::get_character,
@@ -128,7 +129,7 @@ impl Character {
                 return Character::from_json(&m["data"]);
             }
             Err(e) => {
-                println!("Error fetching character: {}", e);
+                error!(target = "gameplay", "Error fetching character: {}", e);
                 return Character::new();
             }
         }

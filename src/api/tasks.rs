@@ -4,10 +4,10 @@ use crate::types::common::settings::Settings;
 use crate::types::game::skill::Skill;
 use crate::types::game::task_type::TaskType;
 use anyhow::Result;
-use tracing::info_span;
 
 /// Fetch the list of all tasks.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_tasks_tasks_list_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_all_tasks(
     settings: &Settings,
     max_level: Option<i64>,
@@ -16,9 +16,6 @@ pub async fn get_all_tasks(
     _type: Option<TaskType>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_all_tasks", max_level = %max_level.map_or("".to_string(), |f| f.to_string()), min_level = %min_level.map_or("".to_string(), |f| f.to_string()), skill = %skill.as_ref().map_or("".to_string(), |s| s.to_string()), type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
 
     if let Some(skill) = &skill {
@@ -58,31 +55,25 @@ pub async fn get_all_tasks(
 
 /// Retrieve the details of a task.
 /// https://api.artifactsmmo.com/docs/#/operations/get_task_tasks_list__code__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_task(settings: &Settings, code: &str) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_task", code);
-    let _enter = span.enter();
-
     get(settings, &format!("/tasks/list/{}", code), None).await
 }
 
 /// Retrieve the details of a tasks reward.
 /// https://api.artifactsmmo.com/docs/#/operations/get_tasks_reward_tasks_rewards__code__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_tasks_reward(settings: &Settings, code: &str) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_tasks_reward", code);
-    let _enter = span.enter();
-
     get(settings, &format!("/tasks/rewards/{}", code), None).await
 }
 
 /// Fetch the list of all tasks rewards. To obtain these rewards, you must exchange 6 task coins with a tasks master.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_tasks_rewards_tasks_rewards_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_all_tasks_rewards(
     settings: &Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_all_tasks_rewards", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {

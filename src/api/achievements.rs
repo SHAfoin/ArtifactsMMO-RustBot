@@ -1,5 +1,4 @@
 use anyhow::Result;
-use tracing::info_span;
 
 use crate::{
     api::utils::get,
@@ -14,14 +13,12 @@ use crate::{
 
 /// List of all achievements.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_achievements_achievements_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_all_achievements(
     settings: &Settings,
     _type: Option<AchievementType>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_all_achievements", _type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -37,12 +34,10 @@ pub async fn get_all_achievements(
 
 /// Retrieve the details of a achievement.
 /// https://api.artifactsmmo.com/docs/#/operations/get_achievement_achievements__code__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_achievement(
     settings: &Settings,
     code: ValidatedString,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_achievement", code = %code);
-    let _enter = span.enter();
-
     get(settings, &format!("/achievements/{}", code), None).await
 }

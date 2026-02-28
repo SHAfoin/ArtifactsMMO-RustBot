@@ -1,5 +1,4 @@
 use anyhow::Result;
-use tracing::info_span;
 
 use crate::{
     api::utils::get,
@@ -11,14 +10,12 @@ use crate::{
 
 /// Fetch events details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_active_events_events_active_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_all_events(
     settings: &Settings,
     _type: Option<EventType>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_all_events", _type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());
@@ -31,13 +28,11 @@ pub async fn get_all_events(
 
 /// Fetch active events details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_events_events_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_all_active_events(
     settings: &Settings,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_all_active_events", pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());

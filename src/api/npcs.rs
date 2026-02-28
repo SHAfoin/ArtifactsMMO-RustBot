@@ -1,5 +1,4 @@
 use anyhow::Result;
-use tracing::info_span;
 
 use crate::{
     api::utils::get,
@@ -15,15 +14,13 @@ use crate::{
 
 /// Fetch NPCs details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_npcs_npcs_details_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_all_npcs(
     settings: &Settings,
     name: Option<ValidatedStringWithSpaces>,
     _type: Option<NPCType>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_all_npcs", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), type = %_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
 
     if let Some(name) = name {
@@ -43,13 +40,11 @@ pub async fn get_all_npcs(
 
 /// Retrieve the details of a NPC.
 /// https://api.artifactsmmo.com/docs/#/operations/get_npc_npcs_details__code__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_npc(
     settings: &Settings,
     code: Option<ValidatedString>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_npc", code = %code.as_ref().unwrap_or(&ValidatedString::default()));
-    let _enter = span.enter();
-
     get(
         settings,
         &format!("/npcs/details/{}", code.unwrap_or_default()),
@@ -60,14 +55,12 @@ pub async fn get_npc(
 
 /// Retrieve the items list of a NPC. If the NPC has items to buy, sell or trade, they will be displayed.
 /// https://api.artifactsmmo.com/docs/#/operations/get_npc_items_npcs_items__code__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_npc_items(
     settings: &Settings,
     code: &str,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_npc_items", code);
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());
@@ -82,6 +75,7 @@ pub async fn get_npc_items(
 
 /// Retrieve the list of all NPC items.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_npcs_items_npcs_items_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_all_npcs_items(
     settings: &Settings,
     code: Option<ValidatedString>,
@@ -89,9 +83,6 @@ pub async fn get_all_npcs_items(
     npc: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_all_npcs_items", code = %code.as_ref().unwrap_or(&ValidatedString::default()), currency = %currency.as_ref().unwrap_or(&ValidatedString::default()), npc = %npc.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());

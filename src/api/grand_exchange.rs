@@ -1,5 +1,4 @@
 use anyhow::Result;
-use tracing::info_span;
 
 use crate::{
     api::utils::get,
@@ -10,15 +9,13 @@ use crate::{
 
 /// Fetch all sell orders.
 /// https://api.artifactsmmo.com/docs/#/operations/get_ge_sell_order_grandexchange_orders__id__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_all_grandexchange_orders(
     settings: &Settings,
     seller: Option<ValidatedString>,
     code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_all_grandexchange_orders", seller = %seller.as_ref().unwrap_or(&ValidatedString::default()), code = %code.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
 
     if let Some(seller) = seller {
@@ -38,18 +35,17 @@ pub async fn get_all_grandexchange_orders(
 
 /// Retrieve the sell order of a item.
 /// https://api.artifactsmmo.com/docs/#/operations/get_ge_sell_orders_grandexchange_orders_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_grandexchange_order(
     settings: &Settings,
     id: ValidatedString,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_grandexchange_order", id = %id);
-    let _enter = span.enter();
-
     get(settings, &format!("/grandexchange/orders/{}", id), None).await
 }
 
 // For a specific item only, print the last 7 days of sell history
 /// https://api.artifactsmmo.com/docs/#/operations/get_ge_sell_history_grandexchange_history__code__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_grandexchange_sell_history(
     settings: &Settings,
     code: ValidatedString,
@@ -57,9 +53,6 @@ pub async fn get_grandexchange_sell_history(
     seller: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_grandexchange_sell_history", code = %code, buyer = %buyer.as_ref().unwrap_or(&ValidatedString::default()), seller = %seller.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
 
     if let Some(buyer) = buyer {

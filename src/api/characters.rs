@@ -1,5 +1,4 @@
 use anyhow::Result;
-use tracing::info_span;
 
 use crate::{
     api::utils::get,
@@ -8,12 +7,10 @@ use crate::{
 
 /// Retrieve the details of a character.
 /// https://api.artifactsmmo.com/docs/#/operations/get_character_characters__name__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_character(
     settings: &Settings,
     name: &ValidatedString,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_character", name = %name);
-    let _enter = span.enter();
-
     get(settings, &format!("/characters/{}", name), None).await
 }

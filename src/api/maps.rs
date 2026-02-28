@@ -1,5 +1,4 @@
 use anyhow::Result;
-use tracing::info_span;
 
 use crate::{
     api::utils::get,
@@ -14,6 +13,7 @@ use crate::{
 
 /// Fetch maps details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_maps_maps_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_all_maps(
     settings: &Settings,
     content_code: Option<&ValidatedString>,
@@ -22,9 +22,6 @@ pub async fn get_all_maps(
     layer: Option<MapLayerType>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_all_maps", content_code = %content_code.as_deref().unwrap_or(&ValidatedString::default()), content_type = %content_type.as_ref().map_or("".to_string(), |t| t.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
 
     if let Some(content_code) = content_code {
@@ -52,24 +49,20 @@ pub async fn get_all_maps(
 
 /// Fetch maps details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_layer_maps_maps__layer__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_layer_map(settings: &Settings, layer: MapLayerType) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_layer_map", layer = %layer.to_string());
-    let _enter = span.enter();
-
     get(settings, &format!("/maps/{}", layer.to_string()), None).await
 }
 
 /// Retrieve the details of a map by layer and coordinates.
 /// https://api.artifactsmmo.com/docs/#/operations/get_map_by_position_maps__layer___x___y__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_map_by_position(
     settings: &Settings,
     x: i64,
     y: i64,
     layer: MapLayerType,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_map", x, y);
-    let _enter = span.enter();
-
     get(
         &settings,
         &format!("/maps/{}/{}/{}", layer.to_string(), x, y),
@@ -80,9 +73,7 @@ pub async fn get_map_by_position(
 
 /// Retrieve the details of a map by its unique ID.
 /// https://api.artifactsmmo.com/docs/#/operations/get_map_by_id_maps_id__map_id__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_map_by_id(settings: &Settings, map_id: i64) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_map_by_id", map_id);
-    let _enter = span.enter();
-
     get(settings, &format!("/maps/id/{}", map_id), None).await
 }

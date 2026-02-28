@@ -1,5 +1,4 @@
 use anyhow::Result;
-use tracing::info_span;
 
 use crate::{
     api::utils::get,
@@ -14,15 +13,13 @@ use crate::{
 
 /// Fetch leaderboard details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_characters_leaderboard_leaderboard_characters_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_characters_leaderboard(
     settings: &Settings,
     name: Option<ValidatedStringWithSpaces>,
     sort: Option<Skill>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_characters_leaderboard", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), sort = %sort.as_ref().map_or("".to_string(), |s| s.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
 
     if let Some(name) = name {
@@ -42,15 +39,13 @@ pub async fn get_characters_leaderboard(
 
 /// Fetch leaderboard details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_accounts_leaderboard_leaderboard_accounts_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_account_leaderboard(
     settings: &Settings,
     name: Option<ValidatedStringWithSpaces>,
     sort: Option<ScoreType>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_account_leaderboard", name = %name.as_ref().unwrap_or(&ValidatedStringWithSpaces::default()), sort = %sort.as_ref().map_or("".to_string(), |s| s.to_string()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
 
     if let Some(name) = name {

@@ -1,5 +1,4 @@
 use anyhow::Result;
-use tracing::info_span;
 
 use crate::{
     api::utils::get,
@@ -14,6 +13,7 @@ use crate::{
 
 /// Fetch resources details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_all_resources_resources_get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_all_resources(
     settings: &Settings,
     drop: Option<ValidatedString>,
@@ -23,9 +23,6 @@ pub async fn get_all_resources(
     name: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
 ) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_all_resources", drop = %drop.as_ref().unwrap_or(&ValidatedString::default()), max_level = %max_level.unwrap_or(0), min_level = %min_level.unwrap_or(0), skill = %skill.as_ref().map_or("".to_string(), |s| s.to_string()), name = %name.as_ref().unwrap_or(&ValidatedString::default()), pagination = %pagination.as_ref().unwrap_or(&PaginationParams::default()));
-    let _enter = span.enter();
-
     let mut query_params = Vec::new();
 
     if let Some(skill) = &skill {
@@ -69,9 +66,7 @@ pub async fn get_all_resources(
 
 /// Retrieve the details of a resource.
 /// https://api.artifactsmmo.com/docs/#/operations/get_resource_resources__code__get
+#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get_resource(settings: &Settings, code: &str) -> Result<serde_json::Value> {
-    let span = info_span!(target: "http", "get_resource", code);
-    let _enter = span.enter();
-
     get(settings, &format!("/resources/{}", code), None).await
 }

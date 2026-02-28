@@ -3,7 +3,7 @@ use core::fmt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct ValidatedString(String);
 
 impl ValidatedString {
@@ -39,5 +39,11 @@ impl From<&str> for ValidatedString {
 impl Default for ValidatedString {
     fn default() -> Self {
         Self("".to_string())
+    }
+}
+
+impl fmt::Debug for ValidatedString {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(fmt, "{}", self.0)
     }
 }

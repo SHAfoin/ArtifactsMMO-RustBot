@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum MapContentType {
     Monster,
     Resource,
@@ -22,6 +23,7 @@ impl ToString for MapContentType {
     }
 }
 
+#[derive(Debug)]
 pub enum MapLayerType {
     Interior,
     Overworld,

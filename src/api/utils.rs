@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use reqwest::header::HeaderValue;
 use secrecy::ExposeSecret;
-use tracing::{error, info};
+use tracing::{error, event, info, Level};
 
 use crate::types::{common::settings::Settings, game::character::Character};
 
@@ -117,10 +117,11 @@ pub async fn get(
     // ======== Si succès yayyy, sinon log l'erreur et renvoyer le code d'erreur (la fonction d'au dessus doit gérer selon le cas)
 
     if status.is_success() {
-        info!("HTTP {} OK", status.as_str());
+        info!(target: "http", "HTTP {} OK", status.as_str());
         Ok(response_json)
     } else {
         error!(
+            target: "http",
             "HTTP {} - {:?}",
             status.as_str(),
             response_json["error"]["message"]

@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use tracing::error;
+use tracing::{error, span};
 
 use crate::{
     api::characters::get_character,

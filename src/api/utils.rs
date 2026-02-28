@@ -7,7 +7,6 @@ use crate::types::{common::settings::Settings, game::character::Character};
 
 /// Special POST request for the API that checks for cooldown and updates the character's state after the action.
 /// Must be used for all actions that can trigger a cooldown, otherwise the character's state won't be updated and the bot might try to perform an action while the character is on cooldown, which will result in an error.
-#[tracing::instrument(skip(settings, character), target = "http", fields(character = %character.name))]
 pub async fn post_action(
     settings: &Settings,
     character: &mut Character,
@@ -16,7 +15,7 @@ pub async fn post_action(
 ) -> Result<serde_json::Value> {
     if (character.is_on_cooldown()) {
         let time_to_wait = character.cooldown_expiration.unwrap() - chrono::Utc::now();
-        warn!(
+        info!(
             target = "gameplay",
             "Character is on cooldown. Waiting for {} seconds...",
             time_to_wait.num_seconds()
@@ -37,7 +36,6 @@ pub async fn post_action(
 }
 
 /// POST request for the API with logging.
-#[tracing::instrument(skip(settings), target = "http")]
 pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_json::Value> {
     // ========= Créer l'URL, le client HTTP, et avoir la réponse
 
@@ -69,10 +67,11 @@ pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_j
     // ======== Si succès yayyy, sinon log l'erreur et renvoyer le code d'erreur (la fonction d'au dessus doit gérer selon le cas)
 
     if status.is_success() {
-        info!("HTTP {}", status.as_str());
+        info!(target: "http", "HTTP {}", status.as_str());
         Ok(response_json)
     } else {
         error!(
+            target: "http",
             "HTTP {} - {:?}",
             status.as_str(),
             response_json["error"]["message"]
@@ -84,7 +83,6 @@ pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_j
 }
 
 /// GET request for the API with logging.
-#[tracing::instrument(skip(settings), target = "http")]
 pub async fn get(
     settings: &Settings,
     path: &str,

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use anyhow::Result;
-use tracing::info;
+use tracing::{info, info_span, span, Level};
 use tracing_subscriber::filter::targets;
 
 use crate::{
@@ -25,6 +25,9 @@ async fn main() -> Result<()> {
     let (_guard_http, _guard_gameplay) = logging::init_logging(true);
 
     let mut baba = Character::fetch_character(&settings, &"Baba".into()).await;
+
+    let my_span = span!(target: "gameplay", Level::TRACE, "", "{}", baba.name.as_str());
+    let _enter = my_span.enter();
 
     let searched_resource = ValidatedString::new("ash_tree").unwrap();
     collect_ressource(&settings, &searched_resource, &mut baba).await?;

@@ -15,7 +15,7 @@ pub async fn get_all_events(
     settings: &Settings,
     _type: Option<EventType>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());
@@ -32,7 +32,7 @@ pub async fn get_all_events(
 pub async fn get_all_active_events(
     settings: &Settings,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());

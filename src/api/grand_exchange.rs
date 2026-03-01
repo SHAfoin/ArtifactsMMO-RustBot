@@ -15,7 +15,7 @@ pub async fn get_all_grandexchange_orders(
     seller: Option<ValidatedString>,
     code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(seller) = seller {
@@ -39,7 +39,7 @@ pub async fn get_all_grandexchange_orders(
 pub async fn get_grandexchange_order(
     settings: &Settings,
     id: ValidatedString,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/grandexchange/orders/{}", id), None).await
 }
 
@@ -52,7 +52,7 @@ pub async fn get_grandexchange_sell_history(
     buyer: Option<ValidatedString>,
     seller: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(buyer) = buyer {

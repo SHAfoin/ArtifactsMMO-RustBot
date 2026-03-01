@@ -18,7 +18,7 @@ pub async fn get_all_monsters(
     min_level: Option<i64>,
     name: Option<ValidatedStringWithSpaces>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let (Some(min), Some(max)) = (min_level, max_level) {
@@ -53,6 +53,6 @@ pub async fn get_all_monsters(
 /// Retrieve the details of a monster.
 /// https://api.artifactsmmo.com/docs/#/operations/get_monster_monsters__code__get
 #[tracing::instrument(skip(settings), target = "http")]
-pub async fn get_monster(settings: &Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_monster(settings: &Settings, code: &str) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/monsters/{}", code), None).await
 }

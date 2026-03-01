@@ -11,7 +11,7 @@ use crate::{
 pub async fn get_all_effects(
     settings: &Settings,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());
@@ -22,6 +22,6 @@ pub async fn get_all_effects(
 /// Retrieve the details of a badge.
 /// https://api.artifactsmmo.com/docs/#/operations/get_effect_effects__code__get
 #[tracing::instrument(skip(settings), target = "http")]
-pub async fn get_effect(settings: &Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_effect(settings: &Settings, code: &str) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/effects/{}", code), None).await
 }

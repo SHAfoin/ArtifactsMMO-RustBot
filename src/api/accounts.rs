@@ -20,7 +20,7 @@ pub async fn get_account_achievements(
     completed: Option<bool>,
     _type: Option<AchievementType>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -49,7 +49,7 @@ pub async fn get_account_achievements(
 pub async fn get_account_characters(
     settings: &Settings,
     account: ValidatedString,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/accounts/{}/characters", account), None).await
 }
 
@@ -59,6 +59,6 @@ pub async fn get_account_characters(
 pub async fn get_account(
     settings: &Settings,
     account: ValidatedString,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/accounts/{}", account), None).await
 }

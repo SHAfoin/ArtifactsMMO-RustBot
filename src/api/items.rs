@@ -24,7 +24,7 @@ pub async fn get_all_items(
     name: Option<ValidatedStringWithSpaces>,
     _type: Option<ItemType>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(craft_skill) = &craft_skill {
@@ -73,6 +73,6 @@ pub async fn get_all_items(
 /// Retrieve the details of a item.
 /// https://api.artifactsmmo.com/docs/#/operations/get_item_items__code__get
 #[tracing::instrument(skip(settings), target = "http")]
-pub async fn get_item(settings: &Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_item(settings: &Settings, code: &str) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/items/{}", code), None).await
 }

@@ -1,12 +1,11 @@
 #![allow(dead_code)]
 
 use anyhow::Result;
-use tracing::{info, info_span, span, Level};
-use tracing_subscriber::filter::targets;
+use tracing::{error, info, span, Level};
 
 use crate::{
-    api::characters::get_character,
-    gameplay::gathering::collect_ressource,
+    api::resources::get_resource,
+    gameplay::gathering::{search_and_collect_resource, search_and_collect_resource_loop},
     types::{
         common::{settings::Settings, validated_string::ValidatedString},
         game::character::Character,
@@ -30,7 +29,15 @@ async fn main() -> Result<()> {
     let _enter = my_span.enter();
 
     let searched_resource = ValidatedString::new("ash_tree").unwrap();
-    collect_ressource(&settings, &searched_resource, &mut baba).await?;
+
+    if let Err(_) = search_and_collect_resource_loop(&settings, &searched_resource, &mut baba).await
+    {
+        error!(
+            target: "gameplay",
+            "Failed to collect resource '{}', stopping program.",
+            searched_resource,
+        );
+    }
 
     Ok(())
 }

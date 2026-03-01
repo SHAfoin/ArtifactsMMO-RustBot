@@ -11,6 +11,6 @@ use crate::{
 pub async fn get_character(
     settings: &Settings,
     name: &ValidatedString,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/characters/{}", name), None).await
 }

@@ -18,7 +18,7 @@ pub async fn get_all_achievements(
     settings: &Settings,
     _type: Option<AchievementType>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -38,6 +38,6 @@ pub async fn get_all_achievements(
 pub async fn get_achievement(
     settings: &Settings,
     code: ValidatedString,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/achievements/{}", code), None).await
 }

@@ -10,7 +10,7 @@ use crate::{
 /// Fetch bank details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_bank_details_my_bank_get
 #[tracing::instrument(skip(settings), target = "http")]
-pub async fn get_bank_details(settings: &Settings) -> Result<serde_json::Value> {
+pub async fn get_bank_details(settings: &Settings) -> Result<serde_json::Value, i64> {
     get(settings, "/my/bank", None).await
 }
 
@@ -21,7 +21,7 @@ pub async fn get_bank_items(
     settings: &Settings,
     item_code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -42,7 +42,7 @@ pub async fn get_my_grandexchange_sell_orders(
     settings: &Settings,
     code: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -64,7 +64,7 @@ pub async fn get_my_grandexchange_sell_history(
     code: Option<ValidatedString>,
     id: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -85,7 +85,7 @@ pub async fn get_my_grandexchange_sell_history(
 /// Fetch account details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_account_details_my_details_get
 #[tracing::instrument(skip(settings), target = "http")]
-pub async fn get_account_details(settings: &Settings) -> Result<serde_json::Value> {
+pub async fn get_account_details(settings: &Settings) -> Result<serde_json::Value, i64> {
     get(settings, "/my/details", None).await
 }
 
@@ -96,6 +96,6 @@ pub async fn get_account_details(settings: &Settings) -> Result<serde_json::Valu
 pub async fn get_pending_items(
     settings: &Settings,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     get(settings, "/my/pending-items", None).await
 }

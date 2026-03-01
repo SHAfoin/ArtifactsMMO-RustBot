@@ -1,4 +1,5 @@
 use anyhow::Result;
+use tracing::{error, info};
 
 use crate::{
     api::utils::{get, post_action},
@@ -17,7 +18,7 @@ use crate::{
 pub async fn get_all_characters_logs(
     settings: &Settings,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {
@@ -33,14 +34,14 @@ pub async fn get_all_characters_logs(
 pub async fn get_character_logs(
     settings: &Settings,
     character_name: ValidatedString,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/my/logs/{}", character_name), None).await
 }
 
 /// List of your characters.
 /// https://api.artifactsmmo.com/docs/#/operations/get_my_characters_my_characters_get
 #[tracing::instrument(skip(settings), target = "http")]
-pub async fn get_my_characters(settings: &Settings) -> Result<serde_json::Value> {
+pub async fn get_my_characters(settings: &Settings) -> Result<serde_json::Value, i64> {
     get(settings, "/my/characters", None).await
 }
 
@@ -53,7 +54,7 @@ pub async fn action_move(
     x: Option<i64>,
     y: Option<i64>,
     map_id: Option<i64>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut json_body = serde_json::Map::new();
 
     if let (Some(x), Some(y)) = (x, y) {
@@ -67,13 +68,25 @@ pub async fn action_move(
 
     let json = serde_json::Value::Object(json_body).to_string();
 
-    post_action(
+    let post_action_result = post_action(
         settings,
         character,
         &format!("/my/{}/action/move", character.name),
         &json,
     )
-    .await
+    .await;
+
+    if let Ok(_) = &post_action_result {
+        if let (Some(x), Some(y)) = (x, y) {
+            info!(target: "gameplay", "Moved successfully to x:{} y:{}", x, y);
+        } else if let Some(map_id) = map_id {
+            info!(target: "gameplay", "Moved successfully to map_id:{}", map_id);
+        } else {
+            info!(target: "gameplay", "Moved successfully.");
+        }
+    }
+
+    post_action_result
 }
 
 /// Execute a transition from the current map to another layer. The character must be on a map that has a transition available.
@@ -82,7 +95,7 @@ pub async fn action_move(
 pub async fn action_transition(
     settings: &Settings,
     character: &mut Character,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     post_action(
         settings,
         character,
@@ -98,7 +111,7 @@ pub async fn action_transition(
 pub async fn action_rest(
     settings: &Settings,
     character: &mut Character,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     post_action(
         settings,
         character,
@@ -117,7 +130,7 @@ pub async fn action_equip_item(
     code: ValidatedString,
     slot: EquipmentSlot,
     quantity: Option<i64>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     if slot == EquipmentSlot::Utility1 || slot == EquipmentSlot::Utility2 {
         if let Some(q) = quantity {
             if q < 1 || q > 100 {
@@ -151,7 +164,7 @@ pub async fn action_unequip_item(
     character: &mut Character,
     slot: EquipmentSlot,
     quantity: Option<i64>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     if slot == EquipmentSlot::Utility1 || slot == EquipmentSlot::Utility2 {
         if let Some(q) = quantity {
             if q < 1 || q > 100 {
@@ -184,7 +197,7 @@ pub async fn action_use_item(
     character: &mut Character,
     code: ValidatedString,
     quantity: i64,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
     post_action(
         settings,
@@ -202,7 +215,7 @@ pub async fn action_fight(
     settings: &Settings,
     character: &mut Character,
     participants: Option<Vec<ValidatedString>>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     // Construct the JSON body
     let participants_json = participants
         .map(|p| {
@@ -230,14 +243,20 @@ pub async fn action_fight(
 pub async fn action_gathering(
     settings: &Settings,
     character: &mut Character,
-) -> Result<serde_json::Value> {
-    post_action(
+) -> Result<serde_json::Value, i64> {
+    let post_action_result = post_action(
         settings,
         character,
         &format!("/my/{}/action/gathering", character.name),
         "",
     )
-    .await
+    .await;
+
+    if let Ok(result) = &post_action_result {
+        log_gathering_details(result);
+    }
+
+    post_action_result
 }
 
 /// Crafting an item. The character must be on a map with a workshop.
@@ -248,7 +267,7 @@ pub async fn action_crafting(
     character: &mut Character,
     code: ValidatedString,
     quantity: Option<i64>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(
         r#"{{"code": "{}", "quantity": {}}}"#,
         code,
@@ -270,7 +289,7 @@ pub async fn action_deposit_bank_gold(
     settings: &Settings,
     character: &mut Character,
     quantity: i64,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(r#"{{"quantity": {}}}"#, quantity);
     post_action(
         settings,
@@ -288,7 +307,7 @@ pub async fn action_deposit_bank_item(
     settings: &Settings,
     character: &mut Character,
     items: Vec<(ValidatedString, i64)>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let items_json: Vec<String> = items
         .into_iter()
         .map(|(code, quantity)| format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity))
@@ -312,7 +331,7 @@ pub async fn action_withdraw_bank_item(
     settings: &Settings,
     character: &mut Character,
     items: Vec<(ValidatedString, i64)>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let items_json: Vec<String> = items
         .into_iter()
         .map(|(code, quantity)| format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity))
@@ -336,7 +355,7 @@ pub async fn action_withdraw_bank_gold(
     settings: &Settings,
     character: &mut Character,
     quantity: i64,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(r#"{{"quantity": {}}}"#, quantity);
     post_action(
         settings,
@@ -353,7 +372,7 @@ pub async fn action_withdraw_bank_gold(
 pub async fn action_buy_bank_expansion(
     settings: &Settings,
     character: &mut Character,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     post_action(
         settings,
         character,
@@ -371,7 +390,7 @@ pub async fn action_npc_buy_item(
     character: &mut Character,
     code: ValidatedString,
     quantity: i64,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
     post_action(
         settings,
@@ -390,7 +409,7 @@ pub async fn action_npc_sell_item(
     character: &mut Character,
     code: ValidatedString,
     quantity: i64,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
     post_action(
         settings,
@@ -409,7 +428,7 @@ pub async fn action_recycling(
     character: &mut Character,
     code: ValidatedString,
     quantity: Option<i64>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(
         r#"{{"code": "{}", "quantity": {}}}"#,
         code,
@@ -432,7 +451,7 @@ pub async fn action_grandexchange_buy_item(
     character: &mut Character,
     id: String,
     quantity: i64,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(r#"{{"id": "{}", "quantity": {}}}"#, id, quantity);
     post_action(
         settings,
@@ -452,7 +471,7 @@ pub async fn action_grandexchange_create_sell_order(
     code: ValidatedString,
     quantity: i64,
     price: i64,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(
         r#"{{"code": "{}", "price": {}, "quantity": {}}}"#,
         code, price, quantity
@@ -477,7 +496,7 @@ pub async fn action_grandexchange_cancel_sell_order(
     settings: &Settings,
     character: &mut Character,
     id: String,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(r#"{{"id": "{}"}}"#, id);
 
     post_action(
@@ -498,7 +517,7 @@ pub async fn action_grandexchange_create_buy_order(
     code: ValidatedString,
     quantity: i64,
     price: i64,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(
         r#"{{"code": "{}", "price": {}, "quantity": {}}}"#,
         code, price, quantity
@@ -524,7 +543,7 @@ pub async fn action_grandexchange_fill(
     character: &mut Character,
     id: ValidatedString,
     quantity: i64,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(r#"{{"id": "{}", "quantity": {}}}"#, id, quantity);
 
     post_action(
@@ -542,7 +561,7 @@ pub async fn action_grandexchange_fill(
 pub async fn action_complete_task(
     settings: &Settings,
     character: &mut Character,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     post_action(
         settings,
         character,
@@ -558,7 +577,7 @@ pub async fn action_complete_task(
 pub async fn action_task_exchange(
     settings: &Settings,
     character: &mut Character,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     post_action(
         settings,
         character,
@@ -574,7 +593,7 @@ pub async fn action_task_exchange(
 pub async fn action_accept_new_task(
     settings: &Settings,
     character: &mut Character,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     post_action(
         settings,
         character,
@@ -592,7 +611,7 @@ pub async fn action_task_trade(
     character: &mut Character,
     code: ValidatedString,
     quantity: i64,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
     post_action(
         settings,
@@ -609,7 +628,7 @@ pub async fn action_task_trade(
 pub async fn action_cancel_task(
     settings: &Settings,
     character: &mut Character,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     post_action(
         settings,
         character,
@@ -627,7 +646,7 @@ pub async fn action_give_gold(
     character: &mut Character,
     quantity: i64,
     target_character: ValidatedString,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(
         r#"{{"quantity": {}, "character": "{}"}}"#,
         quantity, target_character
@@ -649,7 +668,7 @@ pub async fn action_give_item(
     character: &mut Character,
     items: Vec<(ValidatedString, i64)>,
     target_character: ValidatedString,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let items_json: Vec<String> = items
         .into_iter()
         .map(|(code, quantity)| format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity))
@@ -677,7 +696,7 @@ pub async fn action_claim_pending_item(
     settings: &Settings,
     character: &mut Character,
     id: &ValidatedString,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     post_action(
         settings,
         character,
@@ -695,7 +714,7 @@ pub async fn action_delete_item(
     character: &mut Character,
     code: ValidatedString,
     quantity: i64,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(r#"{{"code": "{}", "quantity": {}}}"#, code, quantity);
     post_action(
         settings,
@@ -713,7 +732,7 @@ pub async fn action_change_skin(
     settings: &Settings,
     character: &mut Character,
     skin: SkinType,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let json = format!(r#"{{"skin": "{}"}}"#, skin.to_string());
     post_action(
         settings,
@@ -722,4 +741,28 @@ pub async fn action_change_skin(
         &json,
     )
     .await
+}
+
+// ======================== Helper function ========================
+
+/// Helper function to log gathering details such as XP gained and items collected.
+fn log_gathering_details(result: &serde_json::Value) {
+    let details = if result["details"].is_object() {
+        &result["details"]
+    } else {
+        &result["data"]["details"]
+    };
+
+    info!(target: "gameplay", "Gathering result - XP: {}", details["xp"]);
+
+    if let Some(items) = details["items"].as_array() {
+        for item in items {
+            info!(
+                target: "gameplay",
+                "Gathering item - Code: {} x{}",
+                item["code"],
+                item["quantity"]
+            );
+        }
+    }
 }

@@ -1,7 +1,7 @@
-use anyhow::{anyhow, Result};
 use reqwest::header::HeaderValue;
 use secrecy::ExposeSecret;
-use tracing::{error, event, info, warn, Level};
+use tracing::{error, info};
+use tracing_subscriber::filter::targets;
 
 use crate::types::{common::settings::Settings, game::character::Character};
 
@@ -12,11 +12,11 @@ pub async fn post_action(
     character: &mut Character,
     path: &str,
     json: &str,
-) -> Result<serde_json::Value> {
-    if (character.is_on_cooldown()) {
+) -> Result<serde_json::Value, i64> {
+    if character.is_on_cooldown() {
         let time_to_wait = character.cooldown_expiration.unwrap() - chrono::Utc::now();
         info!(
-            target = "gameplay",
+            target: "gameplay",
             "Character is on cooldown. Waiting for {} seconds...",
             time_to_wait.num_seconds()
         );
@@ -28,7 +28,9 @@ pub async fn post_action(
 
     match post(settings, path, json).await {
         Ok(m) => {
-            character.update_from_response(&m["data"]["character"])?;
+            character
+                .update_from_response(&m["data"]["character"])
+                .unwrap();
             Ok(m)
         }
         Err(e) => Err(e),
@@ -36,7 +38,7 @@ pub async fn post_action(
 }
 
 /// POST request for the API with logging.
-pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_json::Value> {
+pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_json::Value, i64> {
     // ========= Créer l'URL, le client HTTP, et avoir la réponse
 
     let url = format!("{}{}", settings.api_url, path);
@@ -53,13 +55,14 @@ pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_j
         .headers(headers)
         .body(json.to_owned())
         .send()
-        .await?;
+        .await
+        .unwrap();
 
     // =========
     // ========= Récupérer le status et la réponse en JSON
 
     let status = response.status();
-    let response_text = response.text().await?;
+    let response_text = response.text().await.unwrap();
     let response_json: serde_json::Value = serde_json::from_str(&response_text)
         .unwrap_or_else(|_| serde_json::Value::String(response_text.clone()));
 
@@ -72,13 +75,20 @@ pub async fn post(settings: &Settings, path: &str, json: &str) -> Result<serde_j
     } else {
         error!(
             target: "http",
-            "HTTP {} - {:?}",
+            "HTTP {} - {}",
             status.as_str(),
             response_json["error"]["message"]
                 .as_str()
                 .unwrap_or_default()
         );
-        Err(anyhow!(status.as_u16() as i64))
+        error!(
+            target: "gameplay",
+            "{}",
+            response_json["error"]["message"]
+                .as_str()
+                .unwrap_or_default()
+        );
+        Err(status.as_u16() as i64)
     }
 }
 
@@ -87,7 +97,7 @@ pub async fn get(
     settings: &Settings,
     path: &str,
     query_params: Option<Vec<(&str, String)>>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     // ========= Créer l'URL, le client HTTP, et avoir la réponse
 
     let url = format!("{}{}", settings.api_url, path);
@@ -105,13 +115,17 @@ pub async fn get(
         .headers(headers)
         .query(&query_params.unwrap_or_default())
         .send()
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(target: "http", "GET request failed: {}", e);
+            500
+        })?;
 
     // =========
     // ========= Récupérer le status et la réponse en JSON
 
     let status = response.status();
-    let response_text = response.text().await?;
+    let response_text = response.text().await.unwrap();
     let response_json: serde_json::Value = serde_json::from_str(&response_text)
         .unwrap_or_else(|_| serde_json::Value::String(response_text.clone()));
 
@@ -131,6 +145,6 @@ pub async fn get(
                 .unwrap_or_default()
         );
 
-        Err(anyhow!(status.as_u16() as i64))
+        Err(status.as_u16() as i64)
     }
 }

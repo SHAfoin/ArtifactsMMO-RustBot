@@ -20,7 +20,7 @@ pub async fn get_all_npcs(
     name: Option<ValidatedStringWithSpaces>,
     _type: Option<NPCType>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(name) = name {
@@ -44,7 +44,7 @@ pub async fn get_all_npcs(
 pub async fn get_npc(
     settings: &Settings,
     code: Option<ValidatedString>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     get(
         settings,
         &format!("/npcs/details/{}", code.unwrap_or_default()),
@@ -60,7 +60,7 @@ pub async fn get_npc_items(
     settings: &Settings,
     code: &str,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());
@@ -82,7 +82,7 @@ pub async fn get_all_npcs_items(
     currency: Option<ValidatedString>,
     npc: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
     if let Some(pagination) = &pagination {
         query_params.extend(pagination.to_query_params());

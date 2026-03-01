@@ -22,7 +22,7 @@ pub async fn get_all_resources(
     skill: Option<Skill>,
     name: Option<ValidatedString>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(skill) = &skill {
@@ -67,6 +67,7 @@ pub async fn get_all_resources(
 /// Retrieve the details of a resource.
 /// https://api.artifactsmmo.com/docs/#/operations/get_resource_resources__code__get
 #[tracing::instrument(skip(settings), target = "http")]
-pub async fn get_resource(settings: &Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_resource(settings: &Settings, code: &str) -> Result<serde_json::Value, i64> {
+    println!("Fetching resource with code: {}", code);
     get(settings, &format!("/resources/{}", code), None).await
 }

@@ -19,7 +19,7 @@ pub async fn get_characters_leaderboard(
     name: Option<ValidatedStringWithSpaces>,
     sort: Option<Skill>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(name) = name {
@@ -45,7 +45,7 @@ pub async fn get_account_leaderboard(
     name: Option<ValidatedStringWithSpaces>,
     sort: Option<ScoreType>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(name) = name {

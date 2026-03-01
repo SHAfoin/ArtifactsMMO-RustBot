@@ -21,7 +21,7 @@ pub async fn get_all_maps(
     hide_blocked_maps: Option<bool>,
     layer: Option<MapLayerType>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(content_code) = content_code {
@@ -50,7 +50,10 @@ pub async fn get_all_maps(
 /// Fetch maps details.
 /// https://api.artifactsmmo.com/docs/#/operations/get_layer_maps_maps__layer__get
 #[tracing::instrument(skip(settings), target = "http")]
-pub async fn get_layer_map(settings: &Settings, layer: MapLayerType) -> Result<serde_json::Value> {
+pub async fn get_layer_map(
+    settings: &Settings,
+    layer: MapLayerType,
+) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/maps/{}", layer.to_string()), None).await
 }
 
@@ -62,7 +65,7 @@ pub async fn get_map_by_position(
     x: i64,
     y: i64,
     layer: MapLayerType,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     get(
         &settings,
         &format!("/maps/{}/{}/{}", layer.to_string(), x, y),
@@ -74,6 +77,6 @@ pub async fn get_map_by_position(
 /// Retrieve the details of a map by its unique ID.
 /// https://api.artifactsmmo.com/docs/#/operations/get_map_by_id_maps_id__map_id__get
 #[tracing::instrument(skip(settings), target = "http")]
-pub async fn get_map_by_id(settings: &Settings, map_id: i64) -> Result<serde_json::Value> {
+pub async fn get_map_by_id(settings: &Settings, map_id: i64) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/maps/id/{}", map_id), None).await
 }

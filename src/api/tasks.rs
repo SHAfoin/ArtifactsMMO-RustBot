@@ -15,7 +15,7 @@ pub async fn get_all_tasks(
     skill: Option<Skill>,
     _type: Option<TaskType>,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(skill) = &skill {
@@ -56,14 +56,14 @@ pub async fn get_all_tasks(
 /// Retrieve the details of a task.
 /// https://api.artifactsmmo.com/docs/#/operations/get_task_tasks_list__code__get
 #[tracing::instrument(skip(settings), target = "http")]
-pub async fn get_task(settings: &Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_task(settings: &Settings, code: &str) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/tasks/list/{}", code), None).await
 }
 
 /// Retrieve the details of a tasks reward.
 /// https://api.artifactsmmo.com/docs/#/operations/get_tasks_reward_tasks_rewards__code__get
 #[tracing::instrument(skip(settings), target = "http")]
-pub async fn get_tasks_reward(settings: &Settings, code: &str) -> Result<serde_json::Value> {
+pub async fn get_tasks_reward(settings: &Settings, code: &str) -> Result<serde_json::Value, i64> {
     get(settings, &format!("/tasks/rewards/{}", code), None).await
 }
 
@@ -73,7 +73,7 @@ pub async fn get_tasks_reward(settings: &Settings, code: &str) -> Result<serde_j
 pub async fn get_all_tasks_rewards(
     settings: &Settings,
     pagination: Option<PaginationParams>,
-) -> Result<serde_json::Value> {
+) -> Result<serde_json::Value, i64> {
     let mut query_params = Vec::new();
 
     if let Some(pagination) = &pagination {

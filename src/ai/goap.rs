@@ -1,12 +1,17 @@
 // Améliorations :
-// - NEVERMIND CE POINT EST JUSTE POUR LE LORE => le ASTAR peut se gourer et tourner en boucle théoriquement, à cause du manque de best_g & closedlist dû à l'impossibilité d'avoir une hashmap... WAIT A MINUTE et si on utilisait pas une hashmap mais un iter avec juste un find ou map ???
 // - si on trouve pas de plan le logiciel fait rien
+// - et si plutot que d'avoir un enum de facts, on avait des fonctions closures qui renvoient vrai ou faux et que le astar pourrait lancer pour savoir si les préconditions sont vérifiées ou pas ? ça permettrait d'avoir des conditions plus complexes que juste des égalités ou comparaisons, et de faire des actions plus complexes aussi, mais ça rendrait le planner plus complexe aussi, et potentiellement plus lent, à voir
 // - j'aime pas trop l'usage des static/'a vers la fin
 // - des optimisations mémoires doivent être possible i guess mais complexe
+// - NEVERMIND CE POINT EST JUSTE POUR LE LORE => le ASTAR peut se gourer et tourner en boucle théoriquement, à cause du manque de best_g & closedlist dû à l'impossibilité d'avoir une hashmap... WAIT A MINUTE et si on utilisait pas une hashmap mais un iter avec juste un find ou map ???
 
 use std::{
     collections::{BinaryHeap, HashMap},
     hash::Hash,
+};
+
+use crate::types::game::{
+    character::Character, character_additionnal_info::CharacterAdditionnalInfo,
 };
 
 // ======= FACT VALUE =======
@@ -147,15 +152,22 @@ pub enum ActionStatus {
 
 /// Les actions qui peuvent être réalisées
 /// Ici un trait : comme ça ça peut être implémenté par n'importe quelle struct
-pub trait Action<K: Eq + Clone + Hash> {
+pub trait Action<K: Eq + Clone + Hash + std::fmt::Debug> {
     /// un nom pour l'action, qui va servir d'identifiant aussi
     fn name(&self) -> &str;
     /// les préconditions nécessaires pour que l'action soit réalisable
-    fn preconditions(&self) -> WorldState<K>;
+    fn preconditions(&self) -> WorldState<K> {
+        WorldState::new()
+    }
     /// les effets de l'action sur le monde, cad comment elle modifie les faits du monde
     fn effects(&self) -> WorldState<K>;
     /// l'exécution de l'action, qui va modifier le state du bot en fonction des effets de l'action
-    fn execute(&mut self, state: &mut WorldState<K>) -> ActionStatus; // &mut self car au cas où ça change l'action actuelle
+    fn execute(
+        &mut self,
+        state: &mut WorldState<K>,
+        character: &mut Character,
+        additionnal_info: &mut CharacterAdditionnalInfo,
+    ) -> ActionStatus; // &mut self car au cas où ça change l'action actuelle
     /// le coût de l'action, qui va être utilisé par le planner pour calculer le meilleur chemin vers le goal (astar)
     /// défaut 1
     fn cost(&self) -> f64 {
@@ -337,6 +349,8 @@ pub struct Agent<K: Eq + Hash + Clone> {
     plan: Vec<usize>,
     step: usize,
     pub current_goal_name: Option<&'static str>,
+    pub character: Character,
+    pub additionnal_info: CharacterAdditionnalInfo,
 }
 
 impl<K: Eq + Clone + Hash + std::fmt::Debug> Agent<K> {
@@ -344,6 +358,8 @@ impl<K: Eq + Clone + Hash + std::fmt::Debug> Agent<K> {
         state: WorldState<K>,
         actions: Vec<Box<dyn Action<K>>>,
         goals: Vec<Goal<K>>,
+        character: Character,
+        additionnal_info: CharacterAdditionnalInfo,
     ) -> Agent<K> {
         Agent {
             state,
@@ -352,6 +368,8 @@ impl<K: Eq + Clone + Hash + std::fmt::Debug> Agent<K> {
             plan: vec![],
             step: 0,
             current_goal_name: None,
+            character,
+            additionnal_info,
         }
     }
 
@@ -389,7 +407,11 @@ impl<K: Eq + Clone + Hash + std::fmt::Debug> Agent<K> {
 
         let idx = self.plan[self.step];
         println!("[Agent] Execute action: {}", self.actions[idx].name());
-        match self.actions[idx].execute(&mut self.state) {
+        match self.actions[idx].execute(
+            &mut self.state,
+            &mut self.character,
+            &mut self.additionnal_info,
+        ) {
             ActionStatus::Success => {
                 self.step += 1;
             }

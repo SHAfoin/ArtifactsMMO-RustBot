@@ -1,6 +1,9 @@
 use crate::{
     ai::goap::{Action, ActionStatus, WorldState},
-    types::ai::agent_facts::AgentFact,
+    types::{
+        ai::agent_facts::AgentFact,
+        game::{character::Character, character_additionnal_info::CharacterAdditionnalInfo},
+    },
 };
 
 pub struct FindTarget;
@@ -10,11 +13,6 @@ impl Action<AgentFact> for FindTarget {
         "FindTarget"
     }
 
-    fn preconditions(&self) -> WorldState<AgentFact> {
-        let ws = WorldState::new();
-        ws
-    }
-
     fn effects(&self) -> WorldState<AgentFact> {
         let mut ws = WorldState::new();
         ws.set(AgentFact::TargetReady, true);
@@ -22,11 +20,12 @@ impl Action<AgentFact> for FindTarget {
         ws
     }
 
-    fn cost(&self) -> f64 {
-        1.0
-    }
-
-    fn execute(&mut self, state: &mut WorldState<AgentFact>) -> ActionStatus {
+    fn execute(
+        &mut self,
+        state: &mut WorldState<AgentFact>,
+        character: &mut Character,
+        additionnal_info: &mut CharacterAdditionnalInfo,
+    ) -> ActionStatus {
         //TODO Trouver la Target (brouillon : même target à chaque fois)
         // Si cible identique à avant :
         // state.set(BotFact::NeedEquipment, false);

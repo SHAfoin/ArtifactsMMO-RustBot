@@ -1,6 +1,9 @@
 use crate::{
     ai::goap::{Action, ActionStatus, Condition, FactValue, WorldState},
-    types::ai::agent_facts::AgentFact,
+    types::{
+        ai::agent_facts::AgentFact,
+        game::{character::Character, character_additionnal_info::CharacterAdditionnalInfo},
+    },
 };
 
 pub struct MoveToEnemy;
@@ -33,7 +36,12 @@ impl Action<AgentFact> for MoveToEnemy {
         1.0
     }
 
-    fn execute(&mut self, state: &mut WorldState<AgentFact>) -> ActionStatus {
+    fn execute(
+        &mut self,
+        state: &mut WorldState<AgentFact>,
+        character: &mut Character,
+        additionnal_info: &mut CharacterAdditionnalInfo,
+    ) -> ActionStatus {
         //TODO Bouger vers la Target
         println!("  -> Le bot se rapproche de la Target.");
         ActionStatus::Success

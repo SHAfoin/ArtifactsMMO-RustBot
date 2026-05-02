@@ -1,6 +1,9 @@
 use crate::{
     ai::goap::{Action, ActionStatus, Condition, FactValue, WorldState},
-    types::ai::agent_facts::AgentFact,
+    types::{
+        ai::agent_facts::AgentFact,
+        game::{character::Character, character_additionnal_info::CharacterAdditionnalInfo},
+    },
 };
 
 pub struct FindEquipment;
@@ -30,11 +33,12 @@ impl Action<AgentFact> for FindEquipment {
         ws
     }
 
-    fn cost(&self) -> f64 {
-        1.0
-    }
-
-    fn execute(&mut self, state: &mut WorldState<AgentFact>) -> ActionStatus {
+    fn execute(
+        &mut self,
+        state: &mut WorldState<AgentFact>,
+        character: &mut Character,
+        additionnal_info: &mut CharacterAdditionnalInfo,
+    ) -> ActionStatus {
         //TODO Si needEquipment : fonction "Trouver l'equipement"
         // Sinon : return
         // Brouillon : pas d'equipement,

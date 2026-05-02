@@ -1,6 +1,9 @@
 use crate::{
     ai::goap::{Action, ActionStatus, Condition, FactValue, WorldState},
-    types::ai::agent_facts::AgentFact,
+    types::{
+        ai::agent_facts::AgentFact,
+        game::{character::Character, character_additionnal_info::CharacterAdditionnalInfo},
+    },
 };
 
 pub struct AttackEnemy;
@@ -37,7 +40,12 @@ impl Action<AgentFact> for AttackEnemy {
         1.0
     }
 
-    fn execute(&mut self, state: &mut WorldState<AgentFact>) -> ActionStatus {
+    fn execute(
+        &mut self,
+        state: &mut WorldState<AgentFact>,
+        character: &mut Character,
+        additionnal_info: &mut CharacterAdditionnalInfo,
+    ) -> ActionStatus {
         //TODO Attaquer la Target
         //TODO Reset tout ici ou le faire dans la gameloop quand on calcule les facts ?
         state.set(AgentFact::TargetReady, false);

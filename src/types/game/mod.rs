@@ -1,5 +1,6 @@
 pub mod achievement_type;
 pub mod character;
+pub mod character_additionnal_info;
 pub mod equipment_slot;
 pub mod event_type;
 pub mod item_type;

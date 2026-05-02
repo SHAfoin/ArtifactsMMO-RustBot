@@ -4,13 +4,6 @@ use crate::ai::goals::heal::heal_goal;
 use crate::ai::goap::*;
 use crate::types::ai::agent_facts::AgentFact;
 
-fn print_state(state: &WorldState<AgentFact>) {
-    print!("[State] ");
-    for (key, value) in state.get_all() {
-        print!("{:?}={:?}, ", key, value);
-    }
-}
-
 fn game_loop(agent: &mut Agent<AgentFact>, ticks: usize) {
     for tick in 0..ticks {
         println!("\n=== Tick {} ===", tick);
@@ -31,7 +24,7 @@ fn game_loop(agent: &mut Agent<AgentFact>, ticks: usize) {
         // 2. L'Agent exécute un tick vers ce goal
         agent.tick(&goal);
 
-        print_state(&agent.state);
+        agent.state.print_state();
 
         // 3. Ici dans un vrai jeu : mise à jour du moteur, input, rendu...
     }

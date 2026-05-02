@@ -79,7 +79,7 @@ pub struct WorldState<K: Eq + Hash + Clone> {
     conditions: HashMap<K, Condition>,
 }
 
-impl<K: Eq + Hash + Clone> WorldState<K> {
+impl<K: Eq + Hash + Clone + std::fmt::Debug> WorldState<K> {
     /// création
     pub fn new() -> WorldState<K> {
         WorldState {
@@ -108,6 +108,13 @@ impl<K: Eq + Hash + Clone> WorldState<K> {
     /// récupérer tous les faits
     pub fn get_all(&self) -> &HashMap<K, FactValue> {
         &self.facts
+    }
+
+    pub fn print_state(&self) {
+        print!("[State] ");
+        for (key, value) in self.facts.iter() {
+            print!("{:?}={:?}, ", key, value);
+        }
     }
 
     /// Vérifie que self satisfait other
@@ -219,7 +226,7 @@ impl<K: Eq + Clone + Hash> Ord for Node<K> {
 pub struct Planner;
 
 impl Planner {
-    pub fn plan<K: Eq + Clone + Hash>(
+    pub fn plan<K: Eq + Clone + Hash + std::fmt::Debug>(
         start: &WorldState<K>,
         goal: &Goal<K>,
         actions: &[Box<dyn Action<K>>],
@@ -332,7 +339,7 @@ pub struct Agent<K: Eq + Hash + Clone> {
     pub current_goal_name: Option<&'static str>,
 }
 
-impl<K: Eq + Clone + Hash> Agent<K> {
+impl<K: Eq + Clone + Hash + std::fmt::Debug> Agent<K> {
     pub fn new(
         state: WorldState<K>,
         actions: Vec<Box<dyn Action<K>>>,

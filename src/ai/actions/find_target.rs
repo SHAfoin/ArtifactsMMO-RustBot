@@ -26,12 +26,27 @@ impl Action<AgentFact> for FindTarget {
         character: &mut Character,
         additionnal_info: &mut CharacterAdditionnalInfo,
     ) -> ActionStatus {
-        //TODO Trouver la Target (brouillon : même target à chaque fois)
-        // Si cible identique à avant :
-        // state.set(BotFact::NeedEquipment, false);
-        // Sinon :
-        // state.set(BotFact::NeedEquipment, true);
-        println!("  -> Cible trouvee.");
-        ActionStatus::Success
+        let mut cible = Some("");
+        if let Some(cible_prioritaire) = &additionnal_info.priority_target {
+            cible = Some(cible_prioritaire);
+        } else {
+            cible = find_best_target(character);
+        }
+
+        if let Some(id) = cible {
+            println!("  -> Cible trouvee : {}", id);
+            additionnal_info.target_id = id.to_string();
+            state.set(AgentFact::TargetReady, true);
+            return ActionStatus::Success;
+        } else {
+            println!("  -> Aucune cible trouvee.");
+            state.set(AgentFact::TargetReady, false);
+            return ActionStatus::Failure;
+        }
     }
+}
+
+/// TODO regarder cibles autour de mon niveau ET atteignables
+pub fn find_best_target(_: &Character) -> Option<&str> {
+    Some("chicken")
 }

@@ -20,7 +20,7 @@ impl Action<AgentFact> for DrinkHealingPotion {
         let mut ws = WorldState::new();
         ws.require(
             AgentFact::Health,
-            Condition::GreaterThan(FactValue::Int(MINIMUM_HEALTH_TO_REST)),
+            Condition::GreaterThan(FactValue::Float(MINIMUM_HEALTH_TO_REST)),
         );
         ws.require(AgentFact::HasPotion, Condition::Equals(true.into()));
         ws
@@ -28,7 +28,7 @@ impl Action<AgentFact> for DrinkHealingPotion {
 
     fn effects(&self) -> WorldState<AgentFact> {
         let mut ws = WorldState::new();
-        ws.set(AgentFact::Health, 100i32);
+        ws.set(AgentFact::Health, FactValue::Float(1.0));
         ws
     }
 

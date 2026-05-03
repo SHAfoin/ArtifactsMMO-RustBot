@@ -186,7 +186,7 @@ pub struct Goal<K: Eq + Clone + Hash> {
     pub priority: f64,
     pub desired_state: WorldState<K>,
     pub name: &'static str,
-    pub score_fn: fn(&WorldState<K>) -> f64,
+    pub score_fn: fn(&WorldState<K>, &Character, &CharacterAdditionnalInfo) -> f64,
 }
 
 impl<K: Eq + Clone + Hash> Clone for Goal<K> {
@@ -432,10 +432,12 @@ impl UtilityEvaluator {
     pub fn evaluate<'a, K: Eq + Clone + Hash>(
         goals: &'a [Goal<K>],
         state: &WorldState<K>,
+        character: &Character,
+        additionnal_info: &CharacterAdditionnalInfo,
     ) -> Option<&'a Goal<K>> {
         goals.iter().max_by(|a, b| {
-            let score_a = (a.score_fn)(state);
-            let score_b = (b.score_fn)(state);
+            let score_a = (a.score_fn)(state, character, additionnal_info) * a.priority;
+            let score_b = (b.score_fn)(state, character, additionnal_info) * b.priority;
             score_a
                 .partial_cmp(&score_b)
                 .unwrap_or(std::cmp::Ordering::Equal)

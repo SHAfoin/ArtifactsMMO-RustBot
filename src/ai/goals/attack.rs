@@ -1,14 +1,17 @@
 use crate::{
     ai::goap::{Condition, FactValue, Goal, WorldState},
-    types::ai::agent_facts::AgentFact,
+    types::{
+        ai::agent_facts::AgentFact,
+        game::{character::Character, character_additionnal_info::CharacterAdditionnalInfo},
+    },
 };
 
-fn attack_score(state: &WorldState<AgentFact>) -> f64 {
-    let enemy_hp = match state.get(&AgentFact::EnemyHealth) {
-        Some(FactValue::Int(v)) => *v as f64,
-        _ => 0.0,
-    };
-    (enemy_hp / 100.0).clamp(0.0, 1.0)
+fn attack_score(
+    state: &WorldState<AgentFact>,
+    character: &Character,
+    additionnal_info: &CharacterAdditionnalInfo,
+) -> f64 {
+    additionnal_info.utility_ai_variables.constante_attack
 }
 
 pub fn attack_goal() -> Goal<AgentFact> {

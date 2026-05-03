@@ -1,21 +1,27 @@
 use crate::{
     ai::goap::{Condition, FactValue, Goal, WorldState},
-    types::ai::agent_facts::AgentFact,
+    types::{
+        ai::agent_facts::AgentFact,
+        game::{character::Character, character_additionnal_info::CharacterAdditionnalInfo},
+    },
 };
 
-fn heal_score(state: &WorldState<AgentFact>) -> f64 {
-    let hp = match state.get(&AgentFact::Health) {
-        Some(FactValue::Int(v)) => *v as f64,
-        _ => 0.0,
-    };
-    let max_hp = 100.0;
-    let ratio = (1.0 - hp / max_hp).clamp(0.0, 1.0);
-    ratio * ratio
+fn heal_score(
+    _: &WorldState<AgentFact>,
+    _: &Character,
+    additionnal_info: &CharacterAdditionnalInfo,
+) -> f64 {
+    let hp_ratio = additionnal_info.utility_ai_variables.health_ratio;
+    let score = ((hp_ratio + 0.4).powi(5) * -1.0 * 0.2
+        + 1.0
+        + additionnal_info.utility_ai_variables.constante_heal)
+        .clamp(0.0, 1.0);
+    score
 }
 
 pub fn heal_goal() -> Goal<AgentFact> {
     let mut heal_goal_state = WorldState::new();
-    heal_goal_state.require(AgentFact::Health, Condition::LessThan(FactValue::Int(100)));
+    heal_goal_state.require(AgentFact::Health, Condition::Equals(FactValue::Float(1.0)));
 
     Goal {
         name: "Soin",

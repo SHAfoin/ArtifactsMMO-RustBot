@@ -1,7 +1,7 @@
 use tokio::task;
 
 use crate::{
-    ai::goap::{Action, ActionStatus, WorldState},
+    ai::goap::{Action, ActionStatus, FactValue, WorldState},
     api::my_characters::action_rest,
     types::{
         ai::agent_facts::AgentFact,
@@ -24,7 +24,7 @@ impl Action<AgentFact> for Repos {
 
     fn effects(&self) -> WorldState<AgentFact> {
         let mut ws = WorldState::new();
-        ws.set(AgentFact::Health, 100i32);
+        ws.set(AgentFact::Health, FactValue::Float(1.0));
         ws
     }
 

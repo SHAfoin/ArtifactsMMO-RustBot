@@ -26,7 +26,7 @@ pub fn heal_goal() -> Goal<AgentFact> {
     Goal {
         name: "Soin",
         desired_state: heal_goal_state,
-        priority: 2.0,
+        priority: 1.0,
         score_fn: heal_score,
     }
 }

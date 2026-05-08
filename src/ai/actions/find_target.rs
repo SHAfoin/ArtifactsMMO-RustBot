@@ -78,8 +78,9 @@ pub fn find_target_location(
 
     match result {
         Ok(value) => {
-            let x = value["data"]["x"].as_i64()?;
-            let y = value["data"]["y"].as_i64()?;
+            let x = value["data"][0]["x"].as_i64()?;
+            let y = value["data"][0]["y"].as_i64()?;
+
             Some((x, y))
         }
         Err(_) => None,

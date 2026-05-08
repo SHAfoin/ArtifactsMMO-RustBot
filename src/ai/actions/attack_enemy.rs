@@ -2,6 +2,7 @@ use crate::{
     ai::goap::{Action, ActionStatus, Condition, FactValue, WorldState},
     types::{
         ai::agent_facts::AgentFact,
+        common::settings::{self, Settings},
         game::{character::Character, character_additionnal_info::CharacterAdditionnalInfo},
     },
 };
@@ -43,6 +44,7 @@ impl Action<AgentFact> for AttackEnemy {
     fn execute(
         &mut self,
         state: &mut WorldState<AgentFact>,
+        settings: &Settings,
         character: &mut Character,
         additionnal_info: &mut CharacterAdditionnalInfo,
     ) -> ActionStatus {

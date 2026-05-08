@@ -10,8 +10,9 @@ use std::{
     hash::Hash,
 };
 
-use crate::types::game::{
-    character::Character, character_additionnal_info::CharacterAdditionnalInfo,
+use crate::types::{
+    common::settings::{self, Settings},
+    game::{character::Character, character_additionnal_info::CharacterAdditionnalInfo},
 };
 
 // ======= FACT VALUE =======
@@ -165,6 +166,7 @@ pub trait Action<K: Eq + Clone + Hash + std::fmt::Debug> {
     fn execute(
         &mut self,
         state: &mut WorldState<K>,
+        settings: &Settings,
         character: &mut Character,
         additionnal_info: &mut CharacterAdditionnalInfo,
     ) -> ActionStatus; // &mut self car au cas où ça change l'action actuelle
@@ -342,10 +344,11 @@ impl Planner {
     }
 }
 
-pub struct Agent<K: Eq + Hash + Clone> {
+pub struct Agent<'a, K: Eq + Hash + Clone> {
     pub state: WorldState<K>,
     pub actions: Vec<Box<dyn Action<K>>>,
     pub goals: Vec<Goal<K>>,
+    pub settings: &'a Settings,
     plan: Vec<usize>,
     step: usize,
     pub current_goal_name: Option<&'static str>,
@@ -353,18 +356,20 @@ pub struct Agent<K: Eq + Hash + Clone> {
     pub additionnal_info: CharacterAdditionnalInfo,
 }
 
-impl<K: Eq + Clone + Hash + std::fmt::Debug> Agent<K> {
+impl<'a, K: Eq + Clone + Hash + std::fmt::Debug> Agent<'a, K> {
     pub fn new(
         state: WorldState<K>,
+        settings: &'a Settings,
         actions: Vec<Box<dyn Action<K>>>,
         goals: Vec<Goal<K>>,
         character: Character,
         additionnal_info: CharacterAdditionnalInfo,
-    ) -> Agent<K> {
+    ) -> Agent<'a, K> {
         Agent {
             state,
             actions,
             goals,
+            settings,
             plan: vec![],
             step: 0,
             current_goal_name: None,
@@ -409,6 +414,7 @@ impl<K: Eq + Clone + Hash + std::fmt::Debug> Agent<K> {
         println!("[Agent] Execute action: {}", self.actions[idx].name());
         match self.actions[idx].execute(
             &mut self.state,
+            &mut self.settings,
             &mut self.character,
             &mut self.additionnal_info,
         ) {

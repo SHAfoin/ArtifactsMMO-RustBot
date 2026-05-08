@@ -3,6 +3,7 @@ use crate::ai::goals::attack::attack_goal;
 use crate::ai::goals::heal::heal_goal;
 use crate::ai::goap::*;
 use crate::types::ai::agent_facts::AgentFact;
+use crate::types::common::settings::Settings;
 use crate::types::game::character::{self, Character};
 use crate::types::game::character_additionnal_info::CharacterAdditionnalInfo;
 
@@ -87,12 +88,10 @@ fn update_utility_variables(
     additionnal_info.utility_ai_variables.health_ratio = hp_ratio;
 }
 
-pub fn new_ai<'a>(
-    mut character: Character,
-    mut additionnal_info: CharacterAdditionnalInfo,
-) -> Agent<AgentFact> {
+pub fn new_ai<'a>(settings: &'a Settings, mut character: Character) -> Agent<'a, AgentFact> {
     // worldstate
     let mut initial_worldstate = WorldState::new();
+    let mut additionnal_info = CharacterAdditionnalInfo::new();
 
     // init les facts de base
     update_facts(
@@ -118,6 +117,7 @@ pub fn new_ai<'a>(
 
     let mut agent = Agent::new(
         initial_worldstate,
+        settings,
         actions,
         goals,
         character,

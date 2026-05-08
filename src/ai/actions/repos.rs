@@ -2,6 +2,7 @@ use crate::{
     ai::goap::{Action, ActionStatus, WorldState},
     types::{
         ai::agent_facts::AgentFact,
+        common::settings::Settings,
         game::{character::Character, character_additionnal_info::CharacterAdditionnalInfo},
     },
 };
@@ -31,6 +32,7 @@ impl Action<AgentFact> for Repos {
     fn execute(
         &mut self,
         state: &mut WorldState<AgentFact>,
+        settings: &Settings,
         character: &mut Character,
         additionnal_info: &mut CharacterAdditionnalInfo,
     ) -> ActionStatus {

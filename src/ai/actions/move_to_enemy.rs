@@ -1,7 +1,11 @@
+use tokio::task;
+
 use crate::{
     ai::goap::{Action, ActionStatus, Condition, FactValue, WorldState},
+    api::my_characters::action_move,
     types::{
         ai::agent_facts::AgentFact,
+        common::settings::Settings,
         game::{character::Character, character_additionnal_info::CharacterAdditionnalInfo},
     },
 };
@@ -39,11 +43,25 @@ impl Action<AgentFact> for MoveToEnemy {
     fn execute(
         &mut self,
         state: &mut WorldState<AgentFact>,
+        settings: &Settings,
         character: &mut Character,
         additionnal_info: &mut CharacterAdditionnalInfo,
     ) -> ActionStatus {
-        //TODO Bouger vers la Target
         println!("  -> Le bot se rapproche de la Target.");
+        let x = additionnal_info.position_target_x;
+        let y = additionnal_info.position_target_y;
+
+        let result = task::block_in_place(|| {
+            tokio::runtime::Handle::current()
+                .block_on(async { action_move(&settings, character, Some(x), Some(y), None).await })
+        });
+
+        if let Err(e) = result {
+            match e {
+                490 => {}
+                _ => return ActionStatus::Failure,
+            }
+        }
         ActionStatus::Success
     }
 }

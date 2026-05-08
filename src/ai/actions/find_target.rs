@@ -2,6 +2,7 @@ use crate::{
     ai::goap::{Action, ActionStatus, WorldState},
     types::{
         ai::agent_facts::AgentFact,
+        common::settings::{self, Settings},
         game::{character::Character, character_additionnal_info::CharacterAdditionnalInfo},
     },
 };
@@ -23,6 +24,7 @@ impl Action<AgentFact> for FindTarget {
     fn execute(
         &mut self,
         state: &mut WorldState<AgentFact>,
+        settings: &Settings,
         character: &mut Character,
         additionnal_info: &mut CharacterAdditionnalInfo,
     ) -> ActionStatus {
@@ -39,7 +41,7 @@ impl Action<AgentFact> for FindTarget {
             state.set(AgentFact::TargetReady, true);
             return ActionStatus::Success;
         } else {
-            println!("  -> Aucune cible trouvee.");
+            println!("  -> Aucune cible trouvée.");
             state.set(AgentFact::TargetReady, false);
             return ActionStatus::Failure;
         }
@@ -47,6 +49,7 @@ impl Action<AgentFact> for FindTarget {
 }
 
 /// TODO regarder cibles autour de mon niveau ET atteignables
+
 pub fn find_best_target(_: &Character) -> Option<&str> {
     Some("chicken")
 }

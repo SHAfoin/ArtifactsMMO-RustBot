@@ -24,28 +24,36 @@ pub mod types;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let settings: Settings = config::app_configuration();
+    let settings: std::sync::Arc<Settings> = std::sync::Arc::new(config::app_configuration());
     let (_guard_http, _guard_gameplay) = logging::init_logging(true);
 
-    let baba = Character::fetch_character(&settings, &"Baba".into()).await;
+    let character_names = vec!["Baba"];
+    let mut tasks = vec![];
 
-    let my_span = span!(target: "gameplay", Level::TRACE, "", "{}", baba.name.as_str());
-    let _enter = my_span.enter();
+    for name in character_names {
+        let settings_clone = std::sync::Arc::clone(&settings);
+        let name_str = name.to_string();
 
-    let baba_agent = new_ai(baba, CharacterAdditionnalInfo::new());
+        let task = tokio::spawn(async move {
+            let character =
+                Character::fetch_character(&settings_clone, &name_str.as_str().into()).await;
 
-    // ========== TEST RECHERCHE RESSOURCE ==========
+            let my_span =
+                span!(target: "gameplay", Level::TRACE, "", "{}", character.name.as_str());
+            let _enter = my_span.enter();
 
-    // let searched_resource = ValidatedString::new("ash_tree").unwrap();
+            let _agent = new_ai(&settings_clone, character);
 
-    // if let Err(_) = search_and_collect_resource_loop(&settings, &searched_resource, &mut baba).await
-    // {
-    //     error!(
-    //         target: "gameplay",
-    //         "Failed to collect resource '{}', stopping program.",
-    //         searched_resource,
-    //     );
-    // }
+            info!(target: "gameplay", "Agent {} spawned", name_str);
+        });
+
+        tasks.push(task);
+    }
+
+    // Attendre que tous les agents terminent
+    for task in tasks {
+        let _ = task.await;
+    }
 
     Ok(())
 }

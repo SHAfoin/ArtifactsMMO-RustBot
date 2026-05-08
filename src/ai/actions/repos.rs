@@ -1,5 +1,8 @@
+use tokio::task;
+
 use crate::{
     ai::goap::{Action, ActionStatus, WorldState},
+    api::my_characters::action_rest,
     types::{
         ai::agent_facts::AgentFact,
         common::settings::Settings,
@@ -31,12 +34,15 @@ impl Action<AgentFact> for Repos {
 
     fn execute(
         &mut self,
-        state: &mut WorldState<AgentFact>,
+        _: &mut WorldState<AgentFact>,
         settings: &Settings,
         character: &mut Character,
-        additionnal_info: &mut CharacterAdditionnalInfo,
+        _: &mut CharacterAdditionnalInfo,
     ) -> ActionStatus {
-        //TODO Soins par repos
+        let _ = task::block_in_place(|| {
+            tokio::runtime::Handle::current()
+                .block_on(async { action_rest(&settings, character).await })
+        });
         println!("  -> Soins par repos: sante restauree.");
         ActionStatus::Success
     }

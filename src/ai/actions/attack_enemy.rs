@@ -1,5 +1,8 @@
+use tokio::task;
+
 use crate::{
     ai::goap::{Action, ActionStatus, Condition, FactValue, WorldState},
+    api::my_characters::action_fight,
     types::{
         ai::agent_facts::AgentFact,
         common::settings::{self, Settings},
@@ -48,11 +51,16 @@ impl Action<AgentFact> for AttackEnemy {
         character: &mut Character,
         additionnal_info: &mut CharacterAdditionnalInfo,
     ) -> ActionStatus {
-        //TODO Attaquer la Target
-        //TODO Reset tout ici ou le faire dans la gameloop quand on calcule les facts ?
-        state.set(AgentFact::TargetReady, false);
-        state.set(AgentFact::NeedEquipment, false);
-        state.set(AgentFact::TargetInRange, false);
+        let result = task::block_in_place(|| {
+            tokio::runtime::Handle::current()
+                .block_on(async { action_fight(&settings, character, None).await })
+        });
+
+        if let Err(e) = result {
+            match e {
+                _ => return ActionStatus::Failure,
+            }
+        }
         println!("  -> Attaque fatale: ennemi elimine.");
         ActionStatus::Success
     }

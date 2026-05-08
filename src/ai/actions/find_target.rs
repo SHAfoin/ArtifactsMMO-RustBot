@@ -1,5 +1,8 @@
+use tokio::task;
+
 use crate::{
     ai::goap::{Action, ActionStatus, WorldState},
+    api::maps::get_all_maps,
     types::{
         ai::agent_facts::AgentFact,
         common::settings::{self, Settings},
@@ -28,18 +31,26 @@ impl Action<AgentFact> for FindTarget {
         character: &mut Character,
         additionnal_info: &mut CharacterAdditionnalInfo,
     ) -> ActionStatus {
-        let mut cible = Some("");
-        if let Some(cible_prioritaire) = &additionnal_info.priority_target {
-            cible = Some(cible_prioritaire);
-        } else {
-            cible = find_best_target(character);
-        }
+        let cible: Option<String> =
+            if let Some(cible_prioritaire) = &additionnal_info.priority_target {
+                Some(cible_prioritaire.clone())
+            } else {
+                Some(find_best_target(settings, character))
+            };
 
         if let Some(id) = cible {
-            println!("  -> Cible trouvee : {}", id);
-            additionnal_info.target_id = id.to_string();
-            state.set(AgentFact::TargetReady, true);
-            return ActionStatus::Success;
+            if let Some((x, y)) = find_target_location(settings, character, &id) {
+                println!("  -> Cible trouvee : {}, position: ({}, {})", id, x, y);
+                additionnal_info.target_id = id.to_string();
+                additionnal_info.position_target_x = x;
+                additionnal_info.position_target_y = y;
+                state.set(AgentFact::TargetReady, true);
+                return ActionStatus::Success;
+            } else {
+                println!("  -> Cible trouvee : {}, position inconnue", id);
+                state.set(AgentFact::TargetReady, false);
+                return ActionStatus::Failure;
+            }
         } else {
             println!("  -> Aucune cible trouvée.");
             state.set(AgentFact::TargetReady, false);
@@ -49,7 +60,28 @@ impl Action<AgentFact> for FindTarget {
 }
 
 /// TODO regarder cibles autour de mon niveau ET atteignables
+pub fn find_best_target(_: &Settings, _: &Character) -> String {
+    "chicken".to_string()
+}
 
-pub fn find_best_target(_: &Character) -> Option<&str> {
-    Some("chicken")
+pub fn find_target_location(
+    settings: &Settings,
+    _: &Character,
+    target: &str,
+) -> Option<(i64, i64)> {
+    let result = task::block_in_place(|| {
+        tokio::runtime::Handle::current().block_on(async {
+            let validated_target = target.into();
+            get_all_maps(settings, Some(&validated_target), None, None, None, None).await
+        })
+    });
+
+    match result {
+        Ok(value) => {
+            let x = value["data"]["x"].as_i64()?;
+            let y = value["data"]["y"].as_i64()?;
+            Some((x, y))
+        }
+        Err(_) => None,
+    }
 }

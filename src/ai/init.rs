@@ -7,7 +7,7 @@ use crate::types::common::settings::Settings;
 use crate::types::game::character::{self, Character};
 use crate::types::game::character_additionnal_info::CharacterAdditionnalInfo;
 
-fn game_loop(agent: &mut Agent<AgentFact>, ticks: usize) {
+pub fn game_loop(agent: &mut Agent<AgentFact>, ticks: usize) {
     for tick in 0..ticks {
         println!("\n=== Tick {} ===", tick);
 

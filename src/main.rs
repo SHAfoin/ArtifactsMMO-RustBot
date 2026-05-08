@@ -6,7 +6,7 @@ use anyhow::Result;
 use tracing::{error, info, span, Level};
 
 use crate::{
-    ai::init::new_ai,
+    ai::init::{game_loop, new_ai},
     api::resources::get_resource,
     gameplay::gathering::{search_and_collect_resource, search_and_collect_resource_loop},
     types::{
@@ -42,9 +42,11 @@ async fn main() -> Result<()> {
                 span!(target: "gameplay", Level::TRACE, "", "{}", character.name.as_str());
             let _enter = my_span.enter();
 
-            let _agent = new_ai(&settings_clone, character);
+            let mut agent = new_ai(&settings_clone, character);
 
             info!(target: "gameplay", "Agent {} spawned", name_str);
+
+            game_loop(&mut agent, 10);
         });
 
         tasks.push(task);

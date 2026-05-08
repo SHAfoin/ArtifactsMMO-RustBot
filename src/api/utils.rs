@@ -1,5 +1,6 @@
 use reqwest::header::HeaderValue;
 use secrecy::ExposeSecret;
+use serde_json::to_string_pretty;
 use tracing::{error, info};
 use tracing_subscriber::filter::targets;
 
@@ -14,23 +15,30 @@ pub async fn post_action(
     json: &str,
 ) -> Result<serde_json::Value, i64> {
     if character.is_on_cooldown() {
-        let time_to_wait = character.cooldown_expiration.unwrap() - chrono::Utc::now();
+        let time_to_wait = character.cooldown;
         info!(
             target: "gameplay",
             "Character is on cooldown. Waiting for {} seconds...",
-            time_to_wait.num_seconds()
+            time_to_wait
         );
-        tokio::time::sleep(tokio::time::Duration::from_millis(
-            time_to_wait.num_milliseconds() as u64,
-        ))
-        .await;
+        tokio::time::sleep(tokio::time::Duration::from_secs(time_to_wait as u64)).await;
     }
 
     match post(settings, path, json).await {
         Ok(m) => {
-            character
-                .update_from_response(&m["data"]["character"])
-                .unwrap();
+            println!("{}", to_string_pretty(&m).unwrap());
+            // Choose a reference to the character JSON (either single "character" or first "characters" element).
+            let character_json: &serde_json::Value = if !m["data"]["character"].is_null() {
+                &m["data"]["character"]
+            } else if m["data"]["characters"].is_array()
+                && !m["data"]["characters"].as_array().unwrap().is_empty()
+            {
+                &m["data"]["characters"][0]
+            } else {
+                error!(target: "gameplay", "No character data in response: {}", to_string_pretty(&m).unwrap());
+                return Err(500);
+            };
+            character.update_from_response(character_json).unwrap();
             Ok(m)
         }
         Err(e) => Err(e),
